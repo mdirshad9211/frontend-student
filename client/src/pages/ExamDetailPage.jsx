@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ExternalLink, ClipboardCheck, Sparkles } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ExternalLink, ClipboardCheck, Sparkles, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { Container } from '../components/Container'
@@ -14,10 +14,12 @@ import { upsertUserExam } from '../features/userExams/userExamsApi'
 import { useAuth } from '../store/authStore'
 import { computeEligibility } from '../utils/eligibility'
 import { formatDate, daysUntil } from '../utils/date'
+import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
 
 export function ExamDetailPage() {
   const { id } = useParams()
   const { isAuthed } = useAuth()
+  const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
   const [exam, setExam] = useState(null)
@@ -66,6 +68,16 @@ export function ExamDetailPage() {
     return computeEligibility(profile, exam)
   }, [exam, profile])
 
+  const displayName = useMemo(() => sanitizeForDisplay(exam?.name, 200), [exam?.name])
+  const conductingBodyShort = useMemo(
+    () => sanitizeForDisplay(exam?.conductingBody || '', 260),
+    [exam?.conductingBody]
+  )
+  const displayEducation = useMemo(
+    () => sanitizeForDisplay(exam?.educationRequired, 120),
+    [exam?.educationRequired]
+  )
+
   async function markApplied(status) {
     if (!isAuthed) return
     setSaving(true)
@@ -92,11 +104,26 @@ export function ExamDetailPage() {
           </Card>
         ) : (
           <div className="space-y-6">
+            {/* Back link */}
+            <div>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 transition"
+              >
+                <ArrowLeft size={14} />
+                Back
+              </button>
+            </div>
+
+            {/* Header */}
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="text-xs font-semibold tracking-wide text-emerald-700">EXAM DETAILS</div>
-                <div className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900">{exam.name}</div>
-                <div className="mt-2 text-sm text-gray-600">{exam.conductingBody}</div>
+                <div className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900">{displayName || 'Exam'}</div>
+                {conductingBodyShort ? (
+                  <div className="mt-2 max-w-3xl text-sm text-gray-600">{conductingBodyShort}</div>
+                ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {deadlineDays !== null && deadlineDays >= 0 ? (
@@ -152,7 +179,7 @@ export function ExamDetailPage() {
                             <span className="font-semibold text-gray-900">Age</span>: {eligibility.reasons.userAge} (required {exam.minAge}–{exam.maxAge})
                           </div>
                           <div>
-                            <span className="font-semibold text-gray-900">Education</span>: {profile.education || '—'} (required {exam.educationRequired})
+                            <span className="font-semibold text-gray-900">Education</span>: {profile.education || '—'} (required {displayEducation || '—'})
                           </div>
                         </div>
                       </div>
@@ -164,53 +191,55 @@ export function ExamDetailPage() {
 
               <Card>
                 <CardHeader title="Actions" subtitle="Track this exam in your dashboard." />
-                <CardBody className="space-y-3">
-                  {latestCycle?.applyLink ? (
-                    <a href={latestCycle.applyLink} target="_blank" rel="noreferrer">
-                      <Button className="w-full">
-                        Official apply link <ExternalLink size={16} className="ml-2" />
+                <CardBody>
+                  <div className="flex flex-col gap-2">
+                    {latestCycle?.applyLink ? (
+                      <a href={latestCycle.applyLink} target="_blank" rel="noreferrer">
+                        <Button className="w-full">
+                          Official apply link <ExternalLink size={16} className="ml-2" />
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button className="w-full" variant="ghost" disabled>
+                        Apply link not available
                       </Button>
-                    </a>
-                  ) : (
-                    <Button className="w-full" variant="ghost" disabled>
-                      Apply link not available
-                    </Button>
-                  )}
+                    )}
 
-                  {isAuthed ? (
-                    <>
-                      <Button
-                        className="w-full"
-                        variant="secondary"
-                        disabled={saving}
-                        onClick={() => markApplied('interested')}
-                      >
-                        Mark Interested
-                      </Button>
-                      <Button
-                        className="w-full"
-                        disabled={saving}
-                        onClick={() => markApplied('applied')}
-                      >
-                        <ClipboardCheck size={16} className="mr-2" />
-                        Mark as Applied
-                      </Button>
-                      <Button
-                        className="w-full"
-                        variant="ghost"
-                        disabled={saving}
-                        onClick={() => markApplied('preparing')}
-                      >
-                        Mark Preparing
-                      </Button>
-                    </>
-                  ) : (
-                    <Link to="/register">
-                      <Button className="w-full" variant="amber">
-                        Create account to track
-                      </Button>
-                    </Link>
-                  )}
+                    {isAuthed ? (
+                      <>
+                        <Button
+                          className="w-full"
+                          variant="secondary"
+                          disabled={saving}
+                          onClick={() => markApplied('interested')}
+                        >
+                          Mark Interested
+                        </Button>
+                        <Button
+                          className="w-full"
+                          disabled={saving}
+                          onClick={() => markApplied('applied')}
+                        >
+                          <ClipboardCheck size={16} className="mr-2" />
+                          Mark as Applied
+                        </Button>
+                        <Button
+                          className="w-full"
+                          variant="ghost"
+                          disabled={saving}
+                          onClick={() => markApplied('preparing')}
+                        >
+                          Mark Preparing
+                        </Button>
+                      </>
+                    ) : (
+                      <Link to="/register">
+                        <Button className="w-full" variant="amber">
+                          Create account to track
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
                 </CardBody>
               </Card>
             </div>
@@ -222,8 +251,13 @@ export function ExamDetailPage() {
                   <div>
                     <span className="font-semibold text-gray-900">Age limit</span>: {exam.minAge}–{exam.maxAge}
                   </div>
+                  {typeof exam.totalPosts === 'number' && exam.totalPosts > 0 ? (
+                    <div>
+                      <span className="font-semibold text-gray-900">Total posts</span>: {exam.totalPosts}
+                    </div>
+                  ) : null}
                   <div>
-                    <span className="font-semibold text-gray-900">Education required</span>: {exam.educationRequired}
+                    <span className="font-semibold text-gray-900">Education required</span>: {displayEducation || '—'}
                   </div>
                   <div>
                     <span className="font-semibold text-gray-900">Application start</span>: {formatDate(latestCycle?.applicationStart)}

@@ -35,3 +35,8 @@ export async function adminListUsers() {
   return data
 }
 
+export async function adminRunSarkariScraper(limit = 40) {
+  const { data } = await api.post('/admin/scrape/sarkariresult', { limit })
+  return data
+}
+

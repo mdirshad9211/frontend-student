@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bell, CalendarClock, CheckCircle2, ExternalLink, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 import { Container } from '../components/Container'
 import { Card, CardBody, CardHeader } from '../components/Card'
@@ -10,25 +11,35 @@ import { Skeleton } from '../components/Skeleton'
 import { getEligible } from '../features/exams/examsApi'
 import { listUserExams, upsertUserExam } from '../features/userExams/userExamsApi'
 import { daysUntil, formatDate } from '../utils/date'
+import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
 
 function ExamRow({ item, actionLabel, onAction }) {
   const cycle = item.latestCycle
   const d = cycle?.applicationEnd ? daysUntil(cycle.applicationEnd) : null
+  const name = sanitizeForDisplay(item.name, 110)
+  const body = sanitizeForDisplay(item.conductingBody, 100)
+  const start = cycle?.applicationStart ? formatDate(cycle.applicationStart) : null
+  const end = cycle?.applicationEnd ? formatDate(cycle.applicationEnd) : null
+
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80 sm:flex-row sm:items-center sm:justify-between">
+    <motion.div
+      whileHover={{ y: -2, boxShadow: '0 18px 40px rgba(15,118,110,0.16)' }}
+      transition={{ duration: 0.15 }}
+      className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80 sm:flex-row sm:items-center sm:justify-between"
+    >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="text-sm font-semibold text-gray-900 truncate">{item.name}</div>
+          <div className="text-sm font-semibold text-gray-900 line-clamp-2">{name || 'Exam'}</div>
           {d !== null && d >= 0 ? (
             <Badge tone={d <= 2 ? 'warn' : 'success'}>Ends in {d} day(s)</Badge>
           ) : (
             <Badge tone="neutral">No active deadline</Badge>
           )}
         </div>
-        <div className="mt-1 text-sm text-gray-600">{item.conductingBody}</div>
+        {body ? <div className="mt-1 text-sm text-gray-600 line-clamp-1">{body}</div> : null}
         {cycle ? (
           <div className="mt-2 text-xs text-gray-500">
-            Apply: {formatDate(cycle.applicationStart)} → {formatDate(cycle.applicationEnd)}
+            Apply: {start || '—'} {start && end ? '→' : null} {end || '—'}
           </div>
         ) : null}
       </div>
@@ -49,7 +60,7 @@ function ExamRow({ item, actionLabel, onAction }) {
           </Button>
         ) : null}
       </div>
-    </div>
+    </motion.div>
   )
 }
 

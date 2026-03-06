@@ -6,10 +6,15 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "seed:admin": "node scripts/seedAdmin.js"
+    "seed:admin": "node scripts/seedAdmin.js",
+    "scrape:sarkariresult": "node scripts/scrapeSarkariResult.js",
+    "clean:exams": "node scripts/cleanExamData.js",
+    "clear:sarkari": "node scripts/clearSarkariExams.js"
   },
   "dependencies": {
+    "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",

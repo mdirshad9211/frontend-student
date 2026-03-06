@@ -1,6 +1,8 @@
 const Exam = require('../models/Exam');
 const ExamCycle = require('../models/ExamCycle');
 const { ApiError } = require('../utils/ApiError');
+const { sanitizeExamText } = require('../utils/sanitizeExamText');
+const { inferExamCategory } = require('../utils/inferExamCategory');
 
 async function listExams() {
   const exams = await Exam.find().sort({ createdAt: -1 });
@@ -17,17 +19,34 @@ async function listExams() {
   ]);
   const map = new Map(cycles.map((c) => [String(c._id), c.latestCycle]));
 
-  return exams.map((e) => ({
-    ...e.toObject(),
-    latestCycle: map.get(String(e._id)) || null,
-  }));
+  return exams.map((e) => {
+    const o = e.toObject();
+    o.name = sanitizeExamText(o.name, 200) || o.name;
+    o.conductingBody = sanitizeExamText(o.conductingBody, 220) || o.conductingBody;
+    o.educationRequired = sanitizeExamText(o.educationRequired, 120) || o.educationRequired;
+    // Ensure category is set: use stored or infer from name + URL (regex-based)
+    if (!o.category || o.category === 'Other') {
+      o.category = inferExamCategory({ name: o.name, url: o.officialWebsite || o.sourceUrl || '' });
+    }
+    return {
+      ...o,
+      latestCycle: map.get(String(e._id)) || null,
+    };
+  });
 }
 
 async function getExamById(examId) {
   const exam = await Exam.findById(examId);
   if (!exam) throw new ApiError(404, 'Exam not found');
   const cycles = await ExamCycle.find({ examId }).sort({ applicationStart: -1 });
-  return { ...exam.toObject(), cycles };
+  const o = exam.toObject();
+  o.name = sanitizeExamText(o.name, 200) || o.name;
+  o.conductingBody = sanitizeExamText(o.conductingBody, 220) || o.conductingBody;
+  o.educationRequired = sanitizeExamText(o.educationRequired, 120) || o.educationRequired;
+  if (!o.category || o.category === 'Other') {
+    o.category = inferExamCategory({ name: o.name, url: o.officialWebsite || o.sourceUrl || '' });
+  }
+  return { ...o, cycles };
 }
 
 async function createExam(payload) {

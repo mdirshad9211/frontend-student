@@ -88,6 +88,19 @@ npm run dev
 
 Frontend runs at `http://localhost:5173`.
 
+## Cleaning scraped exam data
+
+If exam list or detail pages show raw HTML/script snippets from scraping:
+
+- **Sanitize in place** (keeps exams, cleans text):
+  ```bash
+  cd server && npm run clean:exams
+  ```
+- **Delete all exams and cycles** (fresh start, then re-run scraper or admin sync):
+  ```bash
+  cd server && DROP_EXAMS=1 npm run clean:exams
+  ```
+
 ## Admin panel
 
 - UI login: `/admin/login`
