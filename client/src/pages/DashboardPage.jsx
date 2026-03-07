@@ -12,6 +12,7 @@ import { getEligible } from '../features/exams/examsApi'
 import { listUserExams, upsertUserExam } from '../features/userExams/userExamsApi'
 import { daysUntil, formatDate } from '../utils/date'
 import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
+import { isOfficialUrl } from '../utils/url'
 
 function ExamRow({ item, actionLabel, onAction }) {
   const cycle = item.latestCycle
@@ -25,9 +26,9 @@ function ExamRow({ item, actionLabel, onAction }) {
     <motion.div
       whileHover={{ y: -2, boxShadow: '0 18px 40px rgba(15,118,110,0.16)' }}
       transition={{ duration: 0.15 }}
-      className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200/80 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
     >
-      <div className="min-w-0">
+      <div className="min-w-0 sm:flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <div className="text-sm font-semibold text-gray-900 line-clamp-2">{name || 'Exam'}</div>
           {d !== null && d >= 0 ? (
@@ -43,11 +44,11 @@ function ExamRow({ item, actionLabel, onAction }) {
           </div>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2 flex-none sm:w-[260px] sm:flex-row sm:items-center sm:justify-end sm:gap-3">
         <Link to={`/exams/${item._id}`}>
           <Button variant="ghost">View</Button>
         </Link>
-        {cycle?.applyLink ? (
+        {cycle?.applyLink && isOfficialUrl(cycle.applyLink) ? (
           <a href={cycle.applyLink} target="_blank" rel="noreferrer">
             <Button variant="secondary">
               Official link <ExternalLink size={16} className="ml-2" />
@@ -120,7 +121,7 @@ export function DashboardPage() {
   return (
     <Container>
       <div className="mb-6">
-        <div className="text-xs font-semibold tracking-wide text-emerald-700">DASHBOARD</div>
+        <div className="text-xs font-semibold tracking-wide text-indigo-700">DASHBOARD</div>
         <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">Your exam overview</div>
         <div className="mt-2 text-sm text-gray-600">Eligibility, active forms, applied exams, and upcoming deadlines.</div>
       </div>
@@ -130,7 +131,7 @@ export function DashboardPage() {
           <CardBody>
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-gray-900">Eligible</div>
-              <Sparkles className="text-emerald-700" size={18} />
+              <Sparkles className="text-indigo-700" size={18} />
             </div>
             <div className="mt-2 text-3xl font-extrabold">{loading ? '—' : eligible.length}</div>
             <div className="mt-1 text-xs text-gray-600">Exams matching your profile</div>
@@ -140,7 +141,7 @@ export function DashboardPage() {
           <CardBody>
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-gray-900">Active forms</div>
-              <CalendarClock className="text-emerald-700" size={18} />
+              <CalendarClock className="text-indigo-700" size={18} />
             </div>
             <div className="mt-2 text-3xl font-extrabold">{loading ? '—' : activeForms.length}</div>
             <div className="mt-1 text-xs text-gray-600">Currently open applications</div>
@@ -150,7 +151,7 @@ export function DashboardPage() {
           <CardBody>
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-gray-900">Applied / Preparing</div>
-              <CheckCircle2 className="text-emerald-700" size={18} />
+              <CheckCircle2 className="text-indigo-700" size={18} />
             </div>
             <div className="mt-2 text-3xl font-extrabold">{loading ? '—' : applied.length}</div>
             <div className="mt-1 text-xs text-gray-600">Your tracked progress</div>
@@ -160,7 +161,7 @@ export function DashboardPage() {
           <CardBody>
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-gray-900">Deadlines (7d)</div>
-              <Bell className="text-emerald-700" size={18} />
+              <Bell className="text-indigo-700" size={18} />
             </div>
             <div className="mt-2 text-3xl font-extrabold">{loading ? '—' : upcomingDeadlines.length}</div>
             <div className="mt-1 text-xs text-gray-600">Upcoming closing dates</div>
@@ -170,7 +171,15 @@ export function DashboardPage() {
 
       <div className="mt-8 grid gap-6">
         <Card>
-          <CardHeader title="Eligible exams" subtitle="Exams that match your age and education." right={<Link to="/exams"><Button variant="ghost">Browse all</Button></Link>} />
+          <CardHeader
+            title="Eligible exams"
+            subtitle="Exams that match your age and education."
+            right={
+              <Link to="/exams?filter=eligible">
+                <Button variant="ghost">View all</Button>
+              </Link>
+            }
+          />
           <CardBody>
             {loading ? (
               <div className="space-y-3">
@@ -190,14 +199,22 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="text-sm text-gray-600">
-                No eligible exams yet. Ensure your DOB and education are saved in <Link className="font-semibold text-emerald-700" to="/profile">Profile</Link>.
+                No eligible exams yet. Ensure your DOB and education are saved in <Link className="font-semibold text-indigo-700" to="/profile">Profile</Link>.
               </div>
             )}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader title="Active forms" subtitle="Open application windows (latest cycle)." />
+          <CardHeader
+            title="Active forms"
+            subtitle="Open application windows (latest cycle)."
+            right={
+              <Link to="/exams?filter=active">
+                <Button variant="ghost">View all</Button>
+              </Link>
+            }
+          />
           <CardBody>
             {loading ? (
               <div className="space-y-3">
@@ -217,7 +234,15 @@ export function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Applied exams" subtitle="Your applied/preparing list." />
+          <CardHeader
+            title="Applied exams"
+            subtitle="Your applied/preparing list."
+            right={
+              <Link to="/exams?filter=applied">
+                <Button variant="ghost">View all</Button>
+              </Link>
+            }
+          />
           <CardBody>
             {loading ? (
               <Skeleton className="h-24" />
@@ -234,7 +259,15 @@ export function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Upcoming deadlines" subtitle="Tracked exams closing within 7 days." />
+          <CardHeader
+            title="Upcoming deadlines"
+            subtitle="Tracked exams closing within 7 days."
+            right={
+              <Link to="/exams?filter=upcoming">
+                <Button variant="ghost">View all</Button>
+              </Link>
+            }
+          />
           <CardBody>
             {loading ? (
               <Skeleton className="h-24" />

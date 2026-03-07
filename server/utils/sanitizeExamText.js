@@ -15,6 +15,8 @@ function sanitizeExamText(value, maxLength = 500) {
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
     .replace(/\[[\s\S]*?\]\.push\s*\(/g, ' ')
     .replace(/\{[^{}]*\s*slot[^{}]*\}[^;]*/gi, ' ')
+    // Common leftover script snippet pattern from SarkariResult pages
+    .replace(/function\s*\(\s*d\s*,\s*o\s*,\s*a\s*,\s*l\s*\)[^)]*/gi, ' ')
     .replace(/WWW\.SARKARIRESULT\.COM/gi, ' ')
     .replace(/SARKARI\s*RESULT/gi, ' ')
     .trim();

@@ -13,8 +13,10 @@ import { getProfile } from '../features/profile/profileApi'
 import { upsertUserExam } from '../features/userExams/userExamsApi'
 import { useAuth } from '../store/authStore'
 import { computeEligibility } from '../utils/eligibility'
+import { getEducationLabel } from '../utils/education'
 import { formatDate, daysUntil } from '../utils/date'
 import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
+import { isOfficialUrl } from '../utils/url'
 
 export function ExamDetailPage() {
   const { id } = useParams()
@@ -119,7 +121,7 @@ export function ExamDetailPage() {
             {/* Header */}
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <div className="text-xs font-semibold tracking-wide text-emerald-700">EXAM DETAILS</div>
+                <div className="text-xs font-semibold tracking-wide text-indigo-700">EXAM DETAILS</div>
                 <div className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900">{displayName || 'Exam'}</div>
                 {conductingBodyShort ? (
                   <div className="mt-2 max-w-3xl text-sm text-gray-600">{conductingBodyShort}</div>
@@ -153,7 +155,7 @@ export function ExamDetailPage() {
                     </div>
                   ) : !profile ? (
                     <div className="text-sm text-gray-600">
-                      Loading profile… If this hangs, open <Link className="font-semibold text-emerald-700" to="/profile">Profile</Link> and save your details.
+                      Loading profile… If this hangs, open <Link className="font-semibold text-indigo-700" to="/profile">Profile</Link> and save your details.
                     </div>
                   ) : eligibility?.reasons?.missingProfile ? (
                     <div className="text-sm text-gray-700">
@@ -169,7 +171,7 @@ export function ExamDetailPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <Sparkles size={16} className="text-emerald-700" />
+                          <Sparkles size={16} className="text-indigo-700" />
                           <div className="text-sm font-semibold text-gray-900">
                             {eligibility?.eligible ? 'Eligible' : 'Not eligible'}
                           </div>
@@ -179,7 +181,7 @@ export function ExamDetailPage() {
                             <span className="font-semibold text-gray-900">Age</span>: {eligibility.reasons.userAge} (required {exam.minAge}–{exam.maxAge})
                           </div>
                           <div>
-                            <span className="font-semibold text-gray-900">Education</span>: {profile.education || '—'} (required {displayEducation || '—'})
+                            <span className="font-semibold text-gray-900">Education</span>: {getEducationLabel(profile.education) || '—'} (required {displayEducation || '—'})
                           </div>
                         </div>
                       </div>
@@ -193,7 +195,7 @@ export function ExamDetailPage() {
                 <CardHeader title="Actions" subtitle="Track this exam in your dashboard." />
                 <CardBody>
                   <div className="flex flex-col gap-2">
-                    {latestCycle?.applyLink ? (
+                    {latestCycle?.applyLink && isOfficialUrl(latestCycle.applyLink) ? (
                       <a href={latestCycle.applyLink} target="_blank" rel="noreferrer">
                         <Button className="w-full">
                           Official apply link <ExternalLink size={16} className="ml-2" />
@@ -201,7 +203,7 @@ export function ExamDetailPage() {
                       </a>
                     ) : (
                       <Button className="w-full" variant="ghost" disabled>
-                        Apply link not available
+                        Official apply link not available
                       </Button>
                     )}
 
@@ -268,15 +270,36 @@ export function ExamDetailPage() {
                   <div>
                     <span className="font-semibold text-gray-900">Exam date</span>: {formatDate(latestCycle?.examDate)}
                   </div>
-                  <div>
-                    <span className="font-semibold text-gray-900">Official website</span>:{' '}
-                    <a className="font-semibold text-emerald-700 hover:text-emerald-600" href={exam.officialWebsite} target="_blank" rel="noreferrer">
-                      Visit <ExternalLink size={14} className="inline" />
-                    </a>
-                  </div>
+                  {exam.officialWebsite && isOfficialUrl(exam.officialWebsite) ? (
+                    <div>
+                      <span className="font-semibold text-gray-900">Official website</span>:{' '}
+                      <a
+                        className="font-semibold text-indigo-700 hover:text-indigo-600"
+                        href={exam.officialWebsite}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Visit <ExternalLink size={14} className="inline" />
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               </CardBody>
             </Card>
+
+            {exam.details ? (
+              <Card>
+                <CardHeader
+                  title="More details"
+                  subtitle="Key information from the notification (summary, text only)."
+                />
+                <CardBody>
+                  <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line">
+                    {exam.details}
+                  </div>
+                </CardBody>
+              </Card>
+            ) : null}
           </div>
         )}
       </Container>

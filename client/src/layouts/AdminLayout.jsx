@@ -8,7 +8,7 @@ export function AdminLayout({ showNav = false }) {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="border-b border-gray-100 bg-white/80 backdrop-blur">
         <Container className="flex items-center justify-between py-3">
           <Link to="/admin/dashboard" className="text-sm font-extrabold tracking-tight text-gray-900">
@@ -16,7 +16,7 @@ export function AdminLayout({ showNav = false }) {
           </Link>
           {showNav ? (
             <button
-              className="rounded-xl bg-gray-900 px-3 py-2 text-sm font-semibold text-gray-100 shadow-sm hover:bg-gray-800 transition"
+              className="rounded-xl bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-100 shadow-sm hover:bg-slate-700 transition"
               onClick={() => {
                 logout()
                 navigate('/admin/login')

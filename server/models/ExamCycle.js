@@ -6,7 +6,7 @@ const examCycleSchema = new mongoose.Schema(
     applicationStart: { type: Date, required: true },
     applicationEnd: { type: Date, required: true, index: true },
     examDate: { type: Date, required: true },
-    applyLink: { type: String, required: true, trim: true },
+    applyLink: { type: String, trim: true, default: null },
     notificationPdf: { type: String, trim: true },
   },
   { timestamps: true }

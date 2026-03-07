@@ -6,8 +6,9 @@ const examSchema = z.object({
   minAge: z.number().int().nonnegative(),
   maxAge: z.number().int().nonnegative(),
   educationRequired: z.string().min(2).max(120),
+  educationKeys: z.array(z.string()).optional(),
   category: z.string().optional().nullable(),
-  officialWebsite: z.string().url(),
+  officialWebsite: z.string().url().optional().nullable(),
 });
 
 const examCycleSchema = z.object({
@@ -15,7 +16,7 @@ const examCycleSchema = z.object({
   applicationStart: z.string().min(1),
   applicationEnd: z.string().min(1),
   examDate: z.string().min(1),
-  applyLink: z.string().url(),
+  applyLink: z.string().url().optional().nullable(),
   notificationPdf: z.string().url().optional().nullable(),
 });
 

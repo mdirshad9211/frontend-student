@@ -10,6 +10,7 @@ import { Button } from '../../components/Button'
 import { DataTable } from '../../components/DataTable'
 import { Badge } from '../../components/Badge'
 import { adminCreateExam, adminDeleteExam, adminListExams, adminUpdateExam } from '../../features/admin/adminApi'
+import { EDUCATION_OPTIONS, getEducationLabel } from '../../utils/education'
 
 const examFormSchema = z.object({
   name: z.string().min(2),
@@ -17,6 +18,7 @@ const examFormSchema = z.object({
   minAge: z.coerce.number().int().nonnegative(),
   maxAge: z.coerce.number().int().nonnegative(),
   educationRequired: z.string().min(2),
+  educationKeys: z.array(z.string()).optional(),
   category: z.string().optional().nullable(),
   officialWebsite: z.string().url(),
 })
@@ -40,6 +42,7 @@ export function AdminExamManager() {
       minAge: 18,
       maxAge: 35,
       educationRequired: 'graduation',
+      educationKeys: [],
       category: '',
       officialWebsite: '',
     },
@@ -72,6 +75,7 @@ export function AdminExamManager() {
       minAge: exam.minAge ?? 0,
       maxAge: exam.maxAge ?? 0,
       educationRequired: exam.educationRequired || '',
+      educationKeys: exam.educationKeys || [],
       category: exam.category || '',
       officialWebsite: exam.officialWebsite || '',
     })
@@ -85,6 +89,7 @@ export function AdminExamManager() {
       minAge: 18,
       maxAge: 35,
       educationRequired: 'graduation',
+      educationKeys: [],
       category: '',
       officialWebsite: '',
     })
@@ -127,7 +132,18 @@ export function AdminExamManager() {
           </span>
         ),
       },
-      { key: 'educationRequired', label: 'Education' },
+      {
+        key: 'education',
+        label: 'Education',
+        render: (r) =>
+          Array.isArray(r.educationKeys) && r.educationKeys.length ? (
+            <span className="text-xs text-gray-800">
+              {r.educationKeys.map((k) => getEducationLabel(k)).join(', ')}
+            </span>
+          ) : (
+            r.educationRequired
+          ),
+      },
       {
         key: 'category',
         label: 'Category',
@@ -154,7 +170,7 @@ export function AdminExamManager() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-xs font-semibold tracking-wide text-emerald-700">ADMIN</div>
+        <div className="text-xs font-semibold tracking-wide text-indigo-700">ADMIN</div>
         <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">Exams</div>
         <div className="mt-2 text-sm text-gray-600">Add, update, and delete exams.</div>
       </div>
@@ -177,12 +193,28 @@ export function AdminExamManager() {
             <Input label="Conducting Body" error={errors.conductingBody?.message} {...register('conductingBody')} />
             <Input label="Min Age" type="number" error={errors.minAge?.message} {...register('minAge')} />
             <Input label="Max Age" type="number" error={errors.maxAge?.message} {...register('maxAge')} />
-            <Input
-              label="Education Required"
-              placeholder="e.g. graduation"
-              error={errors.educationRequired?.message}
-              {...register('educationRequired')}
-            />
+            <div className="space-y-1">
+              <Input
+                label="Education Required (text)"
+                placeholder="e.g. Graduation in any discipline"
+                error={errors.educationRequired?.message}
+                {...register('educationRequired')}
+              />
+              <div className="mt-2 text-xs font-semibold text-gray-700">Allowed degrees (multi-select)</div>
+              <div className="mt-1 grid grid-cols-2 gap-1 text-xs text-gray-700 sm:grid-cols-3">
+                {EDUCATION_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="inline-flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      value={opt.value}
+                      {...register('educationKeys')}
+                      className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
             <Input label="Category (optional)" error={errors.category?.message} {...register('category')} />
             <div className="md:col-span-2">
               <Input

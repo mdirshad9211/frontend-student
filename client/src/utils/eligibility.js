@@ -1,10 +1,15 @@
 import { calculateAge } from './date'
-import { isEducationEligible } from './education'
+import { isEducationEligible, isEducationEligibleForKeys } from './education'
 
 export function computeEligibility(user, exam) {
   const age = calculateAge(user?.dob)
   const ageOk = age !== null && age >= exam.minAge && age <= exam.maxAge
-  const educationOk = Boolean(user?.education) && isEducationEligible(user.education, exam.educationRequired)
+  const hasKeys = Array.isArray(exam.educationKeys) && exam.educationKeys.length > 0
+  const educationOk =
+    Boolean(user?.education) &&
+    (hasKeys
+      ? isEducationEligibleForKeys(user.education, exam.educationKeys)
+      : isEducationEligible(user.education, exam.educationRequired))
   const missingProfile = !(user?.dob && user?.education)
 
   return {

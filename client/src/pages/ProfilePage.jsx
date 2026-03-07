@@ -15,9 +15,34 @@ import { EDUCATION_OPTIONS } from '../utils/education'
 
 const CATEGORIES = ['general', 'obc', 'sc', 'st', 'ews']
 
+const GENDER_OPTIONS = [
+  { value: '', label: 'Prefer not to say' },
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+]
+
+const PREFERRED_EXAM_CATEGORIES = [
+  'UPSC', 'SSC', 'Railway', 'Banking', 'Defence', 'Teaching',
+  'State PSC', 'Translator', 'Police', 'Other',
+]
+
+const defaultValues = {
+  dob: '',
+  category: '',
+  education: '',
+  state: '',
+  phone: '',
+  gender: '',
+  pwd: false,
+  yearOfGraduation: '',
+  specialization: '',
+}
+
 export function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [preferredCategories, setPreferredCategories] = useState([])
 
   const {
     register,
@@ -26,7 +51,7 @@ export function ProfilePage() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(profileSchema),
-    defaultValues: { dob: '', category: '', education: '', state: '' },
+    defaultValues,
   })
 
   const educationOptions = useMemo(() => EDUCATION_OPTIONS, [])
@@ -42,7 +67,13 @@ export function ProfilePage() {
           category: data?.category || '',
           education: data?.education || '',
           state: data?.state || '',
+          phone: data?.phone || '',
+          gender: data?.gender || '',
+          pwd: Boolean(data?.pwd),
+          yearOfGraduation: data?.yearOfGraduation ?? '',
+          specialization: data?.specialization || '',
         })
+        setPreferredCategories(Array.isArray(data?.preferredCategories) ? data.preferredCategories : [])
       } finally {
         if (active) setLoading(false)
       }
@@ -52,10 +83,21 @@ export function ProfilePage() {
     }
   }, [reset])
 
+  function togglePreferred(cat) {
+    setPreferredCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    )
+  }
+
   async function onSubmit(values) {
     setSaving(true)
     try {
-      await updateProfile(values)
+      await updateProfile({
+        ...values,
+        gender: values.gender || null,
+        yearOfGraduation: values.yearOfGraduation ? Number(values.yearOfGraduation) : null,
+        preferredCategories,
+      })
       toast.success('Profile saved')
     } finally {
       setSaving(false)
@@ -65,57 +107,156 @@ export function ProfilePage() {
   return (
     <Container>
       <div className="mb-6">
-        <div className="text-xs font-semibold tracking-wide text-emerald-700">PROFILE</div>
+        <div className="text-xs font-semibold tracking-wide text-indigo-700">PROFILE</div>
         <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">Your eligibility profile</div>
         <div className="mt-2 text-sm text-gray-600">
-          Add DOB and education to unlock eligibility results and active forms on your dashboard.
+          Fill in your details for accurate exam eligibility. More information helps us match you with the right jobs.
         </div>
       </div>
 
-      <Card>
-        <CardHeader title="Personal details" subtitle="Used only for eligibility calculations." />
-        <CardBody>
-          {loading ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <Skeleton className="h-12" />
-              <Skeleton className="h-12" />
-              <Skeleton className="h-12" />
-              <Skeleton className="h-12" />
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
-              <Input label="Date of birth" type="date" error={errors.dob?.message} {...register('dob')} />
-
-              <Select label="Category" error={errors.category?.message} {...register('category')}>
-                <option value="">Select category</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c.toUpperCase()}
-                  </option>
-                ))}
-              </Select>
-
-              <Select label="Education" error={errors.education?.message} {...register('education')}>
-                <option value="">Select education</option>
-                {educationOptions.map((e) => (
-                  <option key={e} value={e}>
-                    {e.toUpperCase()}
-                  </option>
-                ))}
-              </Select>
-
-              <Input label="State" placeholder="e.g. Maharashtra" error={errors.state?.message} {...register('state')} />
-
-              <div className="md:col-span-2">
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Saving…' : 'Save profile'}
-                </Button>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Section 1: Personal & eligibility */}
+        <Card>
+          <CardHeader
+            title="Personal & eligibility"
+            subtitle="DOB, category, and education are used for eligibility checks."
+          />
+          <CardBody>
+            {loading ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
               </div>
-            </form>
-          )}
-        </CardBody>
-      </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Input label="Date of birth" type="date" error={errors.dob?.message} {...register('dob')} />
+                <Select label="Category" error={errors.category?.message} {...register('category')}>
+                  <option value="">Select category</option>
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c.toUpperCase()}
+                    </option>
+                  ))}
+                </Select>
+                <Select label="Education" error={errors.education?.message} {...register('education')}>
+                  <option value="">Select education</option>
+                  {educationOptions.map((e) => (
+                    <option key={e.value} value={e.value}>
+                      {e.label}
+                    </option>
+                  ))}
+                </Select>
+                <Input label="State" placeholder="e.g. Maharashtra" error={errors.state?.message} {...register('state')} />
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Section 2: Education details */}
+        <Card>
+          <CardHeader
+            title="Education details"
+            subtitle="Year of graduation and specialization help match relevant exams."
+          />
+          <CardBody>
+            {loading ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Input
+                  label="Year of graduation"
+                  type="number"
+                  placeholder="e.g. 2022"
+                  min={1990}
+                  max={2030}
+                  error={errors.yearOfGraduation?.message}
+                  {...register('yearOfGraduation', { setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)) })}
+                />
+                <Input
+                  label="Specialization / Stream"
+                  placeholder="e.g. CSE, ECE, Commerce"
+                  error={errors.specialization?.message}
+                  {...register('specialization')}
+                />
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Section 3: Contact & preferences */}
+        <Card>
+          <CardHeader
+            title="Contact & preferences"
+            subtitle="Phone, gender, and PwD status; preferred exam types for better suggestions."
+          />
+          <CardBody className="space-y-6">
+            {loading ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Input
+                    label="Phone"
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    error={errors.phone?.message}
+                    {...register('phone')}
+                  />
+                  <Select label="Gender" error={errors.gender?.message} {...register('gender')}>
+                    {GENDER_OPTIONS.map((o) => (
+                      <option key={o.value || 'none'} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="pwd"
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    {...register('pwd')}
+                  />
+                  <label htmlFor="pwd" className="text-sm font-medium text-gray-700">
+                    I am a Person with Benchmark Disability (PwD) for reservation purposes
+                  </label>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">Preferred exam categories</div>
+                  <div className="mt-2 text-xs text-gray-600">Select the types of exams you are interested in (optional).</div>
+                  <div className="mt-2 flex flex-wrap gap-3">
+                    {PREFERRED_EXAM_CATEGORIES.map((cat) => (
+                      <label key={cat} className="inline-flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={preferredCategories.includes(cat)}
+                          onChange={() => togglePreferred(cat)}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-800">{cat}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </CardBody>
+        </Card>
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={saving || loading}>
+            {saving ? 'Saving…' : 'Save profile'}
+          </Button>
+        </div>
+      </form>
     </Container>
   )
 }
-

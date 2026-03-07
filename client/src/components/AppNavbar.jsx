@@ -5,7 +5,7 @@ import { useAuth } from '../store/authStore'
 
 const navLinkClass = ({ isActive }) =>
   `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-    isActive ? 'bg-emerald-50 text-emerald-800' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+    isActive ? 'bg-indigo-50 text-indigo-800' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
   }`
 
 export function AppNavbar() {

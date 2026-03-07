@@ -10,6 +10,13 @@ const userSchema = new mongoose.Schema(
     education: { type: String, trim: true },
     state: { type: String, trim: true },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    // Extra profile fields for better eligibility matching
+    phone: { type: String, trim: true },
+    gender: { type: String, enum: ['male', 'female', 'other'], trim: true },
+    pwd: { type: Boolean, default: false },
+    yearOfGraduation: { type: Number, min: 1990, max: 2030 },
+    specialization: { type: String, trim: true },
+    preferredCategories: [{ type: String, trim: true }],
   },
   { timestamps: true }
 );

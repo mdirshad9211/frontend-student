@@ -9,6 +9,8 @@ const SCRIPT_PATTERNS = [
   /\.push\s*\(\s*\{\s*\}\s*\)/g,
   /\[[\s\S]{0,80}\]\.push\s*\(/g,
   /\b(ai|d)\s*=\s*\w+\.createElement/gi,
+  // Common leftover script snippet pattern from SarkariResult pages
+  /function\s*\(\s*d\s*,\s*o\s*,\s*a\s*,\s*l\s*\)[^)]*/gi,
 ]
 
 export function sanitizeForDisplay(value, maxLength = 200) {

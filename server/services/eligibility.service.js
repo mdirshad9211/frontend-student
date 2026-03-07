@@ -1,12 +1,17 @@
 const Exam = require('../models/Exam');
 const ExamCycle = require('../models/ExamCycle');
 const { calculateAge } = require('../utils/date');
-const { isEducationEligible } = require('../utils/education');
+const { isEducationEligible, isEducationEligibleForKeys } = require('../utils/education');
 
 function eligibilityForExam(user, exam) {
   const age = calculateAge(user.dob);
   const ageOk = age !== null && age >= exam.minAge && age <= exam.maxAge;
-  const educationOk = Boolean(user.education) && isEducationEligible(user.education, exam.educationRequired);
+  const hasKeys = Array.isArray(exam.educationKeys) && exam.educationKeys.length > 0;
+  const educationOk =
+    Boolean(user.education) &&
+    (hasKeys
+      ? isEducationEligibleForKeys(user.education, exam.educationKeys)
+      : isEducationEligible(user.education, exam.educationRequired));
   const eligible = Boolean(user.dob && user.education) ? ageOk && educationOk : false;
 
   return {
@@ -32,6 +37,8 @@ async function listEligibleExamsForUser(user) {
   const cycleMap = new Map(cycles.map((c) => [String(c._id), c.latestCycle]));
 
   const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   const activeForms = [];
   const eligibleExams = [];
 
@@ -45,7 +52,10 @@ async function listEligibleExamsForUser(user) {
       eligibility: evalResult,
     };
 
-    if (evalResult.eligible) eligibleExams.push(withMeta);
+    const applicationEndDate = latestCycle ? new Date(latestCycle.applicationEnd) : null;
+    const isExpired = applicationEndDate && applicationEndDate < startOfToday;
+
+    if (evalResult.eligible && !isExpired) eligibleExams.push(withMeta);
 
     if (
       latestCycle &&

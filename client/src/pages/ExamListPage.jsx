@@ -6,7 +6,9 @@ import { Container } from '../components/Container'
 import { Card, CardBody } from '../components/Card'
 import { Badge } from '../components/Badge'
 import { Skeleton } from '../components/Skeleton'
-import { listExams } from '../features/exams/examsApi'
+import { listExams, getEligible } from '../features/exams/examsApi'
+import { listUserExams } from '../features/userExams/userExamsApi'
+import { useAuth } from '../store/authStore'
 import { formatDate, daysUntil } from '../utils/date'
 import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
 
@@ -89,24 +91,55 @@ function ExamCard({ exam }) {
   )
 }
 
+const FILTER_LABELS = {
+  eligible: 'Eligible for you',
+  active: 'Active forms',
+  applied: 'Applied / Preparing',
+  upcoming: 'Upcoming deadlines (7 days)',
+}
+
 export function ExamListPage() {
+  const { isAuthed } = useAuth()
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState([])
   const [query, setQuery] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
 
+  const filterFromUrl = searchParams.get('filter') || ''
   const initialStatus = searchParams.get('status') || 'all'
   const initialCategory = searchParams.get('category') || 'all'
   const [statusFilter, setStatusFilter] = useState(initialStatus)
   const [categoryFilter, setCategoryFilter] = useState(initialCategory)
 
+  const viewFilter = ['eligible', 'active', 'applied', 'upcoming'].includes(filterFromUrl) ? filterFromUrl : null
+
   useEffect(() => {
     let active = true
     ;(async () => {
       try {
-        const data = await listExams()
-        if (!active) return
-        setItems(data.exams || [])
+        if (viewFilter && isAuthed) {
+          if (viewFilter === 'eligible' || viewFilter === 'active') {
+            const data = await getEligible().catch(() => ({ eligibleExams: [], activeForms: [] }))
+            if (!active) return
+            setItems(viewFilter === 'eligible' ? (data.eligibleExams || []) : (data.activeForms || []))
+          } else if (viewFilter === 'applied' || viewFilter === 'upcoming') {
+            const data = await listUserExams().catch(() => ({ userExams: [] }))
+            if (!active) return
+            const list = (data.userExams || []).filter((x) => x.exam)
+            const filtered =
+              viewFilter === 'applied'
+                ? list.filter((x) => x.status === 'applied' || x.status === 'preparing')
+                : list.filter((x) => {
+                    const d = x.latestCycle?.applicationEnd ? daysUntil(x.latestCycle.applicationEnd) : null
+                    return d !== null && d >= 0 && d <= 7
+                  })
+            setItems(filtered.map((x) => ({ ...x.exam, latestCycle: x.latestCycle })))
+          }
+        } else {
+          const data = await listExams()
+          if (!active) return
+          setItems(data.exams || [])
+        }
       } finally {
         if (active) setLoading(false)
       }
@@ -114,7 +147,7 @@ export function ExamListPage() {
     return () => {
       active = false
     }
-  }, [])
+  }, [viewFilter, isAuthed])
 
   const categories = useMemo(() => {
     const set = new Set()
@@ -179,9 +212,17 @@ export function ExamListPage() {
       <Container>
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="text-xs font-semibold tracking-wide text-emerald-700">EXAMS</div>
-            <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">Browse government exams</div>
-            <div className="mt-2 text-sm text-gray-600">Open an exam to see eligibility, dates, and official apply link.</div>
+            <div className="text-xs font-semibold tracking-wide text-indigo-700">EXAMS</div>
+            <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">
+              {viewFilter ? FILTER_LABELS[viewFilter] : 'Browse government exams'}
+            </div>
+            <div className="mt-2 text-sm text-gray-600">
+              {viewFilter && !isAuthed
+                ? 'Login to see exams tailored to you. Showing all exams for now.'
+                : viewFilter
+                  ? `Only ${FILTER_LABELS[viewFilter].toLowerCase()}.`
+                  : 'Open an exam to see eligibility, dates, and official apply link.'}
+            </div>
           </div>
           <div className="w-full md:w-96">
             <div className="relative">
@@ -190,7 +231,7 @@ export function ExamListPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search exams, bodies, categories…"
-                className="w-full rounded-xl bg-white pl-9 pr-3 py-2 text-sm text-gray-900 ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-emerald-600/40 outline-none transition"
+                className="w-full rounded-xl bg-white pl-9 pr-3 py-2 text-sm text-gray-900 ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-indigo-500/40 outline-none transition"
               />
             </div>
           </div>
@@ -200,7 +241,7 @@ export function ExamListPage() {
         <div className="mt-6 flex flex-wrap items-center gap-6 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-gray-700">
-              <Filter size={14} className="text-emerald-600" />
+              <Filter size={14} className="text-indigo-600" />
               <span className="text-sm font-semibold">Status</span>
             </div>
             <div className="inline-flex flex-wrap gap-2">
@@ -216,7 +257,7 @@ export function ExamListPage() {
                   onClick={() => updateStatusFilter(opt.key)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold border transition ${
                     statusFilter === opt.key
-                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+                      ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
                       : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
@@ -233,7 +274,7 @@ export function ExamListPage() {
             <select
               value={categoryFilter}
               onChange={(e) => updateCategoryFilter(e.target.value)}
-              className="min-w-[200px] rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 cursor-pointer"
+              className="min-w-[200px] rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 cursor-pointer"
               aria-label="Filter by category"
             >
               <option value="all">All categories</option>

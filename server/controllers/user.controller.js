@@ -12,6 +12,12 @@ const getProfile = asyncHandler(async (req, res) => {
     education: user.education,
     state: user.state,
     role: user.role,
+    phone: user.phone,
+    gender: user.gender,
+    pwd: user.pwd,
+    yearOfGraduation: user.yearOfGraduation,
+    specialization: user.specialization,
+    preferredCategories: user.preferredCategories || [],
   });
 });
 
@@ -26,6 +32,12 @@ const updateProfile = asyncHandler(async (req, res) => {
     education: user.education,
     state: user.state,
     role: user.role,
+    phone: user.phone,
+    gender: user.gender,
+    pwd: user.pwd,
+    yearOfGraduation: user.yearOfGraduation,
+    specialization: user.specialization,
+    preferredCategories: user.preferredCategories || [],
   });
 });
 

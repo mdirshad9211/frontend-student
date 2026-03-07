@@ -57,7 +57,7 @@ export function AdminDashboard() {
 
   return (
     <div>
-      <div className="text-xs font-semibold tracking-wide text-emerald-700">ADMIN</div>
+      <div className="text-xs font-semibold tracking-wide text-indigo-700">ADMIN</div>
       <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">Dashboard</div>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
         <span>Manage exams, cycles, and users.</span>

@@ -19,7 +19,7 @@ export function DataTable({ columns, rows, rowKey = 'id', emptyText = 'No data' 
             rows.map((r) => (
               <tr
                 key={String(r[rowKey])}
-                className="border-t border-gray-100 even:bg-gray-50/40 hover:bg-emerald-50/40 transition-colors"
+                className="border-t border-gray-100 even:bg-gray-50/40 hover:bg-indigo-50/40 transition-colors"
               >
                 {columns.map((c) => (
                   <td key={c.key} className="px-4 py-3 text-gray-800 align-top">

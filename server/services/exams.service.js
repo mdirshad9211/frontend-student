@@ -24,6 +24,8 @@ async function listExams() {
     o.name = sanitizeExamText(o.name, 200) || o.name;
     o.conductingBody = sanitizeExamText(o.conductingBody, 220) || o.conductingBody;
     o.educationRequired = sanitizeExamText(o.educationRequired, 120) || o.educationRequired;
+    // Do not send large details blob in list response
+    if (o.details) delete o.details;
     // Ensure category is set: use stored or infer from name + URL (regex-based)
     if (!o.category || o.category === 'Other') {
       o.category = inferExamCategory({ name: o.name, url: o.officialWebsite || o.sourceUrl || '' });

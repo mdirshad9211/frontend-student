@@ -93,7 +93,7 @@ export function AdminExamCycleManager() {
         key: 'applyLink',
         label: 'Apply Link',
         render: (r) => (
-          <a className="font-semibold text-emerald-700 hover:text-emerald-600" href={r.applyLink} target="_blank" rel="noreferrer">
+          <a className="font-semibold text-indigo-600 hover:text-indigo-500" href={r.applyLink} target="_blank" rel="noreferrer">
             Open
           </a>
         ),
@@ -105,7 +105,7 @@ export function AdminExamCycleManager() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-xs font-semibold tracking-wide text-emerald-700">ADMIN</div>
+        <div className="text-xs font-semibold tracking-wide text-indigo-700">ADMIN</div>
         <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">Exam cycles</div>
         <div className="mt-2 text-sm text-gray-600">Add application windows and dates for each exam.</div>
       </div>

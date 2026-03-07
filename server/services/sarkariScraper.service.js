@@ -60,6 +60,93 @@ function extractEducation(text) {
   return null;
 }
 
+function isExternalApplyUrl(href, pageUrl) {
+  if (!href || href.startsWith('#') || href.startsWith('javascript:')) return null;
+  try {
+    const full = new URL(href, pageUrl).toString();
+    const host = new URL(full).hostname.toLowerCase().replace(/^www\./, '');
+    if (host.includes('sarkariresult.com')) return null;
+    return full;
+  } catch {
+    return null;
+  }
+}
+
+function rankApplyUrl(href) {
+  try {
+    const host = new URL(href).hostname.toLowerCase();
+    if (/\.gov\.in$/.test(host) || /\.nic\.in$/.test(host)) return 2;
+    return 1;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Extract the official apply URL from the "Apply Online" / "Click here" section.
+ * SarkariResult often has: table row with "Apply Online" text and a "Click here" link in same row.
+ * We never return sarkariresult.com; only the actual portal link.
+ */
+function extractOfficialApplyUrl($, pageUrl) {
+  let best = { url: null, rank: 0 };
+
+  function consider(url) {
+    if (!url) return;
+    const r = rankApplyUrl(url);
+    if (r > best.rank || (r === best.rank && !best.url)) best = { url, rank: r };
+  }
+
+  // 1) Table row containing "Apply Online" or "How to Apply" – link in same row is usually the official one
+  $('tr').each((_, tr) => {
+    const $tr = $(tr);
+    const rowText = $tr.text().replace(/\s+/g, ' ').toLowerCase();
+    if (!rowText.includes('apply') || (!rowText.includes('online') && !rowText.includes('how to apply') && !rowText.includes('link'))) return;
+    $tr.find('a[href]').each((_, a) => {
+      const href = $(a).attr('href');
+      const full = isExternalApplyUrl(href, pageUrl);
+      if (full) consider(full);
+    });
+  });
+
+  // 2) Any link whose text is exactly "Click here" / "Click Here" (the standard text on SarkariResult)
+  $('a[href]').each((_, el) => {
+    const $a = $(el);
+    const text = $a.text().replace(/\s+/g, ' ').trim().toLowerCase();
+    if (text !== 'click here' && text !== 'click here to apply' && text !== 'here') return;
+    const full = isExternalApplyUrl($a.attr('href'), pageUrl);
+    if (full) consider(full);
+  });
+
+  // 3) Links inside elements that contain "Apply Online" or "How to Apply" in their text
+  $('a[href]').each((_, el) => {
+    const $a = $(el);
+    const container = $a.closest('table, .post, .entry-content, .content, .job-detail, .article, div');
+    const blockText = (container.length ? container.first() : $a.parent()).text().replace(/\s+/g, ' ').toLowerCase();
+    const hasApply = blockText.includes('apply online') || blockText.includes('how to apply') || blockText.includes('apply link');
+    if (!hasApply) return;
+    const full = isExternalApplyUrl($a.attr('href'), pageUrl);
+    if (full) consider(full);
+  });
+
+  // 4) Fallback: any .gov.in or .nic.in link on the page (government official sites)
+  if (!best.url) {
+    $('a[href]').each((_, el) => {
+      const href = $(el).attr('href');
+      const full = isExternalApplyUrl(href, pageUrl);
+      if (!full) return;
+      try {
+        const host = new URL(full).hostname.toLowerCase();
+        if (/\.gov\.in$/.test(host) || /\.nic\.in$/.test(host)) {
+          consider(full);
+          return false;
+        }
+      } catch {}
+    });
+  }
+
+  return best.url || null;
+}
+
 async function parseJobDetail(url) {
   const res = await axios.get(url, { timeout: 20000 });
   const html = res.data;
@@ -110,6 +197,8 @@ async function parseJobDetail(url) {
   const conductingBody = sanitizeExamText(conductingBodyRaw, 220);
 
   const category = inferExamCategory({ name: title, url });
+  const officialApplyUrl = extractOfficialApplyUrl($, url);
+  const details = sanitizeExamText(fullText, 2400);
 
   return {
     name: title || 'Government Exam',
@@ -122,6 +211,8 @@ async function parseJobDetail(url) {
     applicationStart,
     applicationEnd,
     examDate,
+    officialApplyUrl,
+    details,
   };
 }
 
@@ -173,6 +264,11 @@ async function upsertExamAndCycle(job) {
     (await Exam.findOne({ name: examName }));
 
   if (!exam) {
+    const officialWebsite =
+      detail.officialApplyUrl && typeof detail.officialApplyUrl === 'string'
+        ? detail.officialApplyUrl
+        : null;
+
     exam = await Exam.create({
       name: examName,
       conductingBody: detail.conductingBody || 'See notification',
@@ -181,7 +277,8 @@ async function upsertExamAndCycle(job) {
       educationRequired: detail.educationRequired || 'See notification',
       totalPosts: detail.totalPosts || null,
       category: detail.category || null,
-      officialWebsite: job.url,
+      officialWebsite,
+      details: detail.details || null,
       source: 'sarkariresult',
       sourceUrl: job.url,
     });
@@ -205,6 +302,17 @@ async function upsertExamAndCycle(job) {
       exam.category = detail.category;
       touched = true;
     }
+    if (detail.officialApplyUrl) {
+      exam.officialWebsite = detail.officialApplyUrl;
+      touched = true;
+    } else if (exam.officialWebsite && String(exam.officialWebsite).includes('sarkariresult.com')) {
+      exam.officialWebsite = null;
+      touched = true;
+    }
+    if (detail.details && !exam.details) {
+      exam.details = detail.details;
+      touched = true;
+    }
     if (touched) {
       await exam.save();
       console.log(`Updated existing exam from source: ${exam.name}`);
@@ -217,10 +325,12 @@ async function upsertExamAndCycle(job) {
     detail.applicationEnd || parseIndianDate(job.lastDateRaw) || new Date(Date.now() + 7 * 86400000);
   const applicationStart = detail.applicationStart || new Date();
   const examDate = detail.examDate || applicationEnd;
+  const applyLink =
+    (detail.officialApplyUrl && typeof detail.officialApplyUrl === 'string' && detail.officialApplyUrl) || null;
 
   const existingCycle = await ExamCycle.findOne({
     examId: exam._id,
-    applyLink: job.url,
+    applyLink,
     applicationStart,
     applicationEnd,
   });
@@ -235,7 +345,7 @@ async function upsertExamAndCycle(job) {
     applicationStart,
     applicationEnd,
     examDate,
-    applyLink: job.url,
+    applyLink,
     notificationPdf: null,
   });
   console.log(`Created exam cycle for ${exam.name} (end ${applicationEnd.toISOString().slice(0, 10)})`);

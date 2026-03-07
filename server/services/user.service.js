@@ -7,12 +7,20 @@ async function getUserById(userId) {
   return user;
 }
 
-async function updateUserProfile(userId, { dob, category, education, state }) {
+async function updateUserProfile(userId, payload) {
+  const allowed = [
+    'dob', 'category', 'education', 'state',
+    'phone', 'gender', 'pwd', 'yearOfGraduation', 'specialization', 'preferredCategories',
+  ];
   const update = {};
-  if (dob !== undefined) update.dob = dob ? new Date(dob) : null;
-  if (category !== undefined) update.category = category || null;
-  if (education !== undefined) update.education = education || null;
-  if (state !== undefined) update.state = state || null;
+  for (const key of allowed) {
+    if (payload[key] === undefined) continue;
+    if (key === 'dob') update.dob = payload.dob ? new Date(payload.dob) : null;
+    else if (key === 'pwd') update.pwd = Boolean(payload.pwd);
+    else if (key === 'yearOfGraduation') update.yearOfGraduation = payload.yearOfGraduation || null;
+    else if (key === 'preferredCategories') update.preferredCategories = Array.isArray(payload.preferredCategories) ? payload.preferredCategories.filter(Boolean) : [];
+    else update[key] = payload[key] || null;
+  }
 
   const user = await User.findByIdAndUpdate(userId, update, { new: true });
   if (!user) throw new ApiError(404, 'User not found');

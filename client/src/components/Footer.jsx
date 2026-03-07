@@ -1,30 +1,42 @@
 import { Link } from 'react-router-dom'
 import { Container } from './Container'
+import { useAuth } from '../store/authStore'
 
 export function Footer() {
+  const { isAuthed, isAdmin } = useAuth()
+  const dashboardHref = isAdmin ? '/admin/dashboard' : '/dashboard'
+
   return (
-    <footer className="border-t border-gray-100 bg-white">
+    <footer className="border-t border-slate-200 bg-white">
       <Container className="py-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-sm font-extrabold tracking-tight text-gray-900">Exam Tracker</div>
-            <div className="mt-1 text-sm text-gray-600">
+            <div className="text-sm font-extrabold tracking-tight text-slate-900">Exam Tracker</div>
+            <div className="mt-1 text-sm text-slate-600">
               Discover eligible exams, track deadlines, and never miss an application window.
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm font-semibold">
-            <Link className="text-gray-700 hover:text-gray-900" to="/exams">
+            <Link className="text-slate-600 hover:text-indigo-600" to="/exams">
               Exams
             </Link>
-            <Link className="text-gray-700 hover:text-gray-900" to="/login">
-              Login
-            </Link>
-            <Link className="text-gray-700 hover:text-gray-900" to="/register">
-              Register
-            </Link>
+            {isAuthed ? (
+              <Link className="text-slate-600 hover:text-indigo-600" to={dashboardHref}>
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link className="text-slate-600 hover:text-indigo-600" to="/login">
+                  Login
+                </Link>
+                <Link className="text-slate-600 hover:text-indigo-600" to="/register">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
-        <div className="mt-8 text-xs text-gray-500">
+        <div className="mt-8 text-xs text-slate-500">
           © {new Date().getFullYear()} Exam Tracker. Not affiliated with any government body.
         </div>
       </Container>

@@ -5,12 +5,12 @@ export function Select({ label, error, className = '', children, ...props }) {
       <select
         {...props}
         className={`w-full rounded-xl bg-white px-3 py-2 text-sm text-gray-900 ring-1 ring-inset ${
-          error ? 'ring-purple-500' : 'ring-gray-200'
-        } focus:ring-2 focus:ring-emerald-600/40 outline-none transition`}
+          error ? 'ring-rose-400' : 'ring-slate-200'
+        } focus:ring-2 focus:ring-indigo-500/40 outline-none transition`}
       >
         {children}
       </select>
-      {error ? <div className="mt-1 text-xs text-purple-600">{error}</div> : null}
+      {error ? <div className="mt-1 text-xs text-rose-600">{error}</div> : null}
     </div>
   )
 }

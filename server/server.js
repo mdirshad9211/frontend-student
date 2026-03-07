@@ -2,6 +2,7 @@ const { createApp } = require('./app');
 const { connectDB } = require('./config/db');
 const { validateEnvForStartup, env } = require('./config/env');
 const { scheduleDeadlineReminder } = require('./jobs/deadlineReminder.job');
+const { scheduleScraper } = require('./jobs/scraperScheduler.job');
 
 async function start() {
   validateEnvForStartup();
@@ -10,6 +11,7 @@ async function start() {
   const app = createApp();
 
   scheduleDeadlineReminder();
+  scheduleScraper();
 
   app.listen(env.PORT, () => {
     // eslint-disable-next-line no-console
