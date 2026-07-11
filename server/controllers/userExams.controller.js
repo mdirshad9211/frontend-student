@@ -11,8 +11,8 @@ const createOrUpdateUserExam = asyncHandler(async (req, res) => {
 });
 
 const getUserExams = asyncHandler(async (req, res) => {
-  const items = await listUserExams(req.user.userId);
-  res.json({ userExams: items });
+  const result = await listUserExams(req.user.userId);
+  res.json(result);
 });
 
 module.exports = { createOrUpdateUserExam, getUserExams };

@@ -1,7 +1,9 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { Landmark, LogIn, UserPlus, LayoutDashboard, LogOut } from 'lucide-react'
 import { Container } from './Container'
 import { useAuth } from '../store/authStore'
+import { STATE_OPTIONS, getSelectedState, setSelectedState } from '../utils/stateFilter'
 
 const navLinkClass = ({ isActive }) =>
   `inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition ${
@@ -13,6 +15,22 @@ const navLinkClass = ({ isActive }) =>
 export function PublicNavbar() {
   const { isAuthed, isAdmin, logout, bootstrapped, user } = useAuth()
   const navigate = useNavigate()
+  const [selectedState, setSelectedStateLocal] = useState('all')
+
+  useEffect(() => {
+    setSelectedStateLocal(getSelectedState())
+  }, [])
+
+  function onStateChange(nextState) {
+    setSelectedState(nextState)
+    setSelectedStateLocal(nextState)
+    const encoded = encodeURIComponent(nextState)
+    if (nextState === 'all') {
+      navigate('/exams')
+      return
+    }
+    navigate(`/exams?state=${encoded}`)
+  }
 
   const showAuthed = bootstrapped && isAuthed
   const homeHref = showAuthed ? (isAdmin ? '/admin/dashboard' : '/dashboard') : '/'
@@ -33,9 +51,26 @@ export function PublicNavbar() {
         </Link>
 
         <div className="hidden items-center gap-4 md:flex">
+          <NavLink className={navLinkClass} to="/results">
+            Results
+          </NavLink>
+          <NavLink className={navLinkClass} to="/admit-cards">
+            Admit Cards
+          </NavLink>
           <NavLink className={navLinkClass} to="/exams">
             Exams
           </NavLink>
+          <select
+            value={selectedState}
+            onChange={(e) => onStateChange(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+            aria-label="Select state"
+          >
+            <option value="all">All states</option>
+            {STATE_OPTIONS.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
           {showAuthed ? (
             <>
               <NavLink className={navLinkClass} to={isAdmin ? '/admin/dashboard' : '/dashboard'}>
@@ -67,6 +102,17 @@ export function PublicNavbar() {
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
+          <select
+            value={selectedState}
+            onChange={(e) => onStateChange(e.target.value)}
+            className="max-w-30 rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-700"
+            aria-label="Select state"
+          >
+            <option value="all">All</option>
+            {STATE_OPTIONS.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
           {showAuthed ? (
             <>
               <Link

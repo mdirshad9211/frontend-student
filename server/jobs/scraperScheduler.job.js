@@ -13,8 +13,8 @@ async function runScraperOnce() {
 }
 
 function scheduleScraper() {
-  // 12:00 AM (midnight) every day
-  cron.schedule('0 0 * * *', runScraperOnce);
+  // 08:00 AM every day
+  cron.schedule('0 8 * * *', runScraperOnce);
   // 12:00 PM (noon) every day
   cron.schedule('0 12 * * *', runScraperOnce);
 }

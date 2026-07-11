@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, CalendarClock, CheckCircle2, ExternalLink, Sparkles } from 'lucide-react'
+import { Bell, CalendarClock, CheckCircle2, ExternalLink, Sparkles, FileCheck2, IdCard } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 import { Container } from '../components/Container'
@@ -44,7 +44,7 @@ function ExamRow({ item, actionLabel, onAction }) {
           </div>
         ) : null}
       </div>
-      <div className="flex flex-col gap-2 flex-none sm:w-[260px] sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+      <div className="flex flex-col gap-2 flex-none sm:w-65 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
         <Link to={`/exams/${item._id}`}>
           <Button variant="ghost">View</Button>
         </Link>
@@ -70,6 +70,7 @@ export function DashboardPage() {
   const [eligible, setEligible] = useState([])
   const [activeForms, setActiveForms] = useState([])
   const [userExams, setUserExams] = useState([])
+  const [appliedUpdates, setAppliedUpdates] = useState([])
   const [savingId, setSavingId] = useState('')
 
   useEffect(() => {
@@ -81,6 +82,7 @@ export function DashboardPage() {
         setEligible(eligibleData.eligibleExams || [])
         setActiveForms(eligibleData.activeForms || [])
         setUserExams(userExamsData.userExams || [])
+        setAppliedUpdates(userExamsData.appliedUpdates || [])
       } finally {
         if (active) setLoading(false)
       }
@@ -113,6 +115,7 @@ export function DashboardPage() {
       await upsertUserExam({ examId, status: 'applied' })
       const updated = await listUserExams()
       setUserExams(updated.userExams || [])
+      setAppliedUpdates(updated.appliedUpdates || [])
     } finally {
       setSavingId('')
     }
@@ -254,6 +257,44 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="text-sm text-gray-600">You haven’t marked any exams as applied yet.</div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Results & admit cards"
+            subtitle="Updates for your applied/preparing exams."
+            right={<Badge tone="accent">{loading ? '—' : appliedUpdates.length}</Badge>}
+          />
+          <CardBody>
+            {loading ? (
+              <Skeleton className="h-24" />
+            ) : appliedUpdates.length ? (
+              <div className="space-y-3">
+                {appliedUpdates.slice(0, 8).map((u) => (
+                  <div
+                    key={`${u.examId}-${u.updateType}-${u.link}`}
+                    className="flex flex-col gap-2 rounded-2xl bg-white p-4 ring-1 ring-gray-200 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                        {u.updateType === 'result' ? <FileCheck2 size={15} className="text-emerald-700" /> : <IdCard size={15} className="text-sky-700" />}
+                        {u.updateType === 'result' ? 'Result declared' : 'Admit card released'}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-700">{sanitizeForDisplay(u.examName, 90)}</div>
+                      <div className="mt-1 text-xs text-gray-500">Updated: {formatDate(u.date)}</div>
+                    </div>
+                    <a href={u.link} target="_blank" rel="noreferrer">
+                      <Button size="sm">
+                        Open update <ExternalLink size={14} className="ml-1" />
+                      </Button>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600">No result/admit-card updates for your applied exams yet.</div>
             )}
           </CardBody>
         </Card>

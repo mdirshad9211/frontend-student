@@ -36,13 +36,41 @@ async function listUserExams(userId) {
   ]);
   const cycleMap = new Map(cycles.map((c) => [String(c._id), c.latestCycle]));
 
-  return items
+  const normalized = items
     .filter((i) => validExamIds.has(String(i.examId)))
     .map((i) => ({
       ...i,
       exam: examMap.get(String(i.examId)) || null,
       latestCycle: cycleMap.get(String(i.examId)) || null,
     }));
+
+  const appliedUpdates = [];
+  for (const item of normalized) {
+    if (!item.exam) continue;
+    if (item.status !== 'applied' && item.status !== 'preparing') continue;
+
+    if (item.exam.latestAdmitCardLink && !String(item.exam.latestAdmitCardLink).includes('sarkariresult.com')) {
+      appliedUpdates.push({
+        examId: item.exam._id,
+        examName: item.exam.name,
+        updateType: 'admit_card',
+        link: item.exam.latestAdmitCardLink,
+        date: item.exam.latestAdmitCardReleasedAt,
+      });
+    }
+    if (item.exam.latestResultLink && !String(item.exam.latestResultLink).includes('sarkariresult.com')) {
+      appliedUpdates.push({
+        examId: item.exam._id,
+        examName: item.exam.name,
+        updateType: 'result',
+        link: item.exam.latestResultLink,
+        date: item.exam.latestResultDeclaredAt,
+      });
+    }
+  }
+
+  appliedUpdates.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  return { userExams: normalized, appliedUpdates };
 }
 
 module.exports = { upsertUserExam, listUserExams };

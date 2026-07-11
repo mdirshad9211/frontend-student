@@ -3,21 +3,31 @@ const ExamCycle = require('../models/ExamCycle');
 const { calculateAge } = require('../utils/date');
 const { isEducationEligible, isEducationEligibleForKeys } = require('../utils/education');
 
+function getUserEducationValues(user) {
+  const values = [];
+  if (user && user.education) values.push(user.education);
+  if (Array.isArray(user && user.educationHistory)) {
+    for (const entry of user.educationHistory) {
+      if (entry && entry.education) values.push(entry.education);
+    }
+  }
+  return [...new Set(values.filter(Boolean))];
+}
+
 function eligibilityForExam(user, exam) {
   const age = calculateAge(user.dob);
   const ageOk = age !== null && age >= exam.minAge && age <= exam.maxAge;
   const hasKeys = Array.isArray(exam.educationKeys) && exam.educationKeys.length > 0;
-  const educationOk =
-    Boolean(user.education) &&
-    (hasKeys
-      ? isEducationEligibleForKeys(user.education, exam.educationKeys)
-      : isEducationEligible(user.education, exam.educationRequired));
-  const eligible = Boolean(user.dob && user.education) ? ageOk && educationOk : false;
+  const userEducations = getUserEducationValues(user);
+  const educationOk = userEducations.some((edu) =>
+    hasKeys ? isEducationEligibleForKeys(edu, exam.educationKeys) : isEducationEligible(edu, exam.educationRequired)
+  );
+  const eligible = Boolean(user.dob && userEducations.length > 0) ? ageOk && educationOk : false;
 
   return {
     eligible,
     reasons: {
-      missingProfile: !(user.dob && user.education),
+      missingProfile: !(user.dob && userEducations.length > 0),
       ageOk,
       educationOk,
       userAge: age,

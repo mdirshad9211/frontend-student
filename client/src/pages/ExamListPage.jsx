@@ -11,8 +11,10 @@ import { listUserExams } from '../features/userExams/userExamsApi'
 import { useAuth } from '../store/authStore'
 import { formatDate, daysUntil } from '../utils/date'
 import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
+import { isOfficialUrl } from '../utils/url'
+import { getSelectedState } from '../utils/stateFilter'
 
-function ExamCard({ exam }) {
+function ExamCard({ exam, section = 'exam' }) {
   const cycle = exam.latestCycle
   const d = cycle?.applicationEnd ? daysUntil(cycle.applicationEnd) : null
   const isActive = cycle && d !== null && d >= 0
@@ -20,9 +22,12 @@ function ExamCard({ exam }) {
   const name = sanitizeForDisplay(exam.name, 110)
   const conductingBody = sanitizeForDisplay(exam.conductingBody, 100)
   const category = exam.category || 'Other'
+  const states = Array.isArray(exam.states) ? exam.states.slice(0, 2) : []
   const start = cycle?.applicationStart ? formatDate(cycle.applicationStart) : null
   const end = cycle?.applicationEnd ? formatDate(cycle.applicationEnd) : null
   const examDate = cycle?.examDate ? formatDate(cycle.examDate) : null
+  const resultLink = exam.latestResultLink && isOfficialUrl(exam.latestResultLink) ? exam.latestResultLink : null
+  const admitLink = exam.latestAdmitCardLink && isOfficialUrl(exam.latestAdmitCardLink) ? exam.latestAdmitCardLink : null
 
   let statusLabel = 'Cycle info'
   let statusTone = 'neutral'
@@ -37,16 +42,22 @@ function ExamCard({ exam }) {
   }
 
   return (
-    <Link to={`/exams/${exam._id}`} className="block">
-      <Card className="hover:shadow-md transition">
-        <CardBody>
+    <Card className="hover:shadow-md transition">
+      <CardBody>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-gray-900 line-clamp-2">{name || 'Government Exam'}</div>
+              <Link to={`/exams/${exam._id}`} className="text-sm font-semibold text-gray-900 line-clamp-2 hover:text-indigo-700 block">
+                {name || 'Government Exam'}
+              </Link>
               {conductingBody ? <div className="mt-1 text-sm text-gray-600 line-clamp-1">{conductingBody}</div> : null}
               {category ? (
                 <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                   {category}
+                </div>
+              ) : null}
+              {states.length ? (
+                <div className="mt-1 text-[11px] font-medium text-gray-500">
+                  {states.join(', ')}
                 </div>
               ) : null}
             </div>
@@ -84,10 +95,44 @@ function ExamCard({ exam }) {
             ) : (
               <div className="text-gray-600">No cycle added yet.</div>
             )}
+
+            {section === 'result' ? (
+              <div className="mt-2 text-gray-600">
+                <span className="font-semibold text-gray-900">Result link</span>{' '}
+                {resultLink ? 'available' : 'not available'}
+              </div>
+            ) : null}
+
+            {section === 'admit_card' ? (
+              <div className="mt-2 text-gray-600">
+                <span className="font-semibold text-gray-900">Admit card link</span>{' '}
+                {admitLink ? 'available' : 'not available'}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-3 flex items-center justify-end gap-3">
+            <Link to={`/exams/${exam._id}`} className="text-sm font-semibold text-slate-700 hover:text-indigo-700">
+              View details
+            </Link>
+          {section === 'result' && resultLink ? (
+            <div className="text-right">
+              <a href={resultLink} target="_blank" rel="noreferrer" className="text-sm font-semibold text-indigo-700 hover:text-indigo-600">
+                Download result
+              </a>
+            </div>
+          ) : null}
+
+          {section === 'admit_card' && admitLink ? (
+            <div className="text-right">
+              <a href={admitLink} target="_blank" rel="noreferrer" className="text-sm font-semibold text-indigo-700 hover:text-indigo-600">
+                Download admit card
+              </a>
+            </div>
+          ) : null}
           </div>
         </CardBody>
       </Card>
-    </Link>
   )
 }
 
@@ -98,7 +143,7 @@ const FILTER_LABELS = {
   upcoming: 'Upcoming deadlines (7 days)',
 }
 
-export function ExamListPage() {
+export function ExamListPage({ forcedSection = null }) {
   const { isAuthed } = useAuth()
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState([])
@@ -108,10 +153,13 @@ export function ExamListPage() {
   const filterFromUrl = searchParams.get('filter') || ''
   const initialStatus = searchParams.get('status') || 'all'
   const initialCategory = searchParams.get('category') || 'all'
+  const initialState = searchParams.get('state') || getSelectedState() || 'all'
   const [statusFilter, setStatusFilter] = useState(initialStatus)
   const [categoryFilter, setCategoryFilter] = useState(initialCategory)
+  const [stateFilter, setStateFilter] = useState(initialState)
 
   const viewFilter = ['eligible', 'active', 'applied', 'upcoming'].includes(filterFromUrl) ? filterFromUrl : null
+  const section = forcedSection || searchParams.get('section') || 'exam'
 
   useEffect(() => {
     let active = true
@@ -136,7 +184,9 @@ export function ExamListPage() {
             setItems(filtered.map((x) => ({ ...x.exam, latestCycle: x.latestCycle })))
           }
         } else {
-          const data = await listExams()
+          const params = {}
+          if (stateFilter !== 'all') params.state = stateFilter
+          const data = await listExams(params)
           if (!active) return
           setItems(data.exams || [])
         }
@@ -147,12 +197,24 @@ export function ExamListPage() {
     return () => {
       active = false
     }
-  }, [viewFilter, isAuthed])
+  }, [viewFilter, isAuthed, stateFilter])
 
   const categories = useMemo(() => {
     const set = new Set()
     items.forEach((e) => {
       if (e.category) set.add(e.category)
+    })
+    return Array.from(set).sort()
+  }, [items])
+
+  const states = useMemo(() => {
+    const set = new Set()
+    items.forEach((e) => {
+      if (Array.isArray(e.states)) {
+        e.states.forEach((s) => {
+          if (s) set.add(s)
+        })
+      }
     })
     return Array.from(set).sort()
   }, [items])
@@ -168,6 +230,10 @@ export function ExamListPage() {
       // category filter
       const cat = e.category || 'Other'
       if (categoryFilter !== 'all' && cat !== categoryFilter) return false
+      if (stateFilter !== 'all') {
+        const examStates = Array.isArray(e.states) ? e.states : []
+        if (!examStates.includes(stateFilter) && !examStates.includes('All India')) return false
+      }
 
       // status filter based on latest cycle
       const cycle = e.latestCycle
@@ -187,9 +253,12 @@ export function ExamListPage() {
       if (statusFilter === 'upcoming' && !isUpcoming) return false
       if (statusFilter === 'expired' && !isExpired) return false
 
+      if (section === 'result' && !(e.latestResultLink && isOfficialUrl(e.latestResultLink))) return false
+      if (section === 'admit_card' && !(e.latestAdmitCardLink && isOfficialUrl(e.latestAdmitCardLink))) return false
+
       return true
     })
-  }, [items, query, categoryFilter, statusFilter])
+  }, [items, query, categoryFilter, statusFilter, stateFilter, section])
 
   function updateStatusFilter(next) {
     setStatusFilter(next)
@@ -207,6 +276,14 @@ export function ExamListPage() {
     setSearchParams(nextParams)
   }
 
+  function updateStateFilter(next) {
+    setStateFilter(next)
+    const nextParams = new URLSearchParams(searchParams)
+    if (next === 'all') nextParams.delete('state')
+    else nextParams.set('state', next)
+    setSearchParams(nextParams)
+  }
+
   return (
     <div className="py-10">
       <Container>
@@ -214,7 +291,13 @@ export function ExamListPage() {
           <div>
             <div className="text-xs font-semibold tracking-wide text-indigo-700">EXAMS</div>
             <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">
-              {viewFilter ? FILTER_LABELS[viewFilter] : 'Browse government exams'}
+              {section === 'result'
+                ? 'Latest results'
+                : section === 'admit_card'
+                  ? 'Latest admit cards'
+                  : viewFilter
+                    ? FILTER_LABELS[viewFilter]
+                    : 'Browse government exams'}
             </div>
             <div className="mt-2 text-sm text-gray-600">
               {viewFilter && !isAuthed
@@ -274,7 +357,7 @@ export function ExamListPage() {
             <select
               value={categoryFilter}
               onChange={(e) => updateCategoryFilter(e.target.value)}
-              className="min-w-[200px] rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 cursor-pointer"
+              className="min-w-50 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 cursor-pointer"
               aria-label="Filter by category"
             >
               <option value="all">All categories</option>
@@ -286,12 +369,32 @@ export function ExamListPage() {
               {categories.length === 0 ? <option disabled>No categories yet</option> : null}
             </select>
           </div>
+
+          <div className="h-6 w-px bg-gray-200 hidden sm:block" aria-hidden />
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700">State</span>
+            <select
+              value={stateFilter}
+              onChange={(e) => updateStateFilter(e.target.value)}
+              className="min-w-50 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 cursor-pointer"
+              aria-label="Filter by state"
+            >
+              <option value="all">All states</option>
+              {states.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+              {states.length === 0 ? <option disabled>No state tags yet</option> : null}
+            </select>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {loading
             ? Array.from({ length: 6 }).map((_, idx) => <Skeleton key={idx} className="h-36" />)
-            : filtered.map((exam) => <ExamCard key={exam._id} exam={exam} />)}
+            : filtered.map((exam) => <ExamCard key={exam._id} exam={exam} section={section} />)}
         </div>
 
         {!loading && filtered.length === 0 ? (

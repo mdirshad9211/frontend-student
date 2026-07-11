@@ -4,7 +4,7 @@ const { getUserById } = require('../services/user.service');
 const { eligibilityForExam, listEligibleExamsForUser } = require('../services/eligibility.service');
 
 const getExams = asyncHandler(async (req, res) => {
-  const exams = await listExams();
+  const exams = await listExams({ state: req.query.state || null });
   res.json({ exams });
 });
 

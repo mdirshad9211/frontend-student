@@ -1,7 +1,7 @@
 import { api } from '../../services/api'
 
-export async function listExams() {
-  const { data } = await api.get('/exams')
+export async function listExams(params = {}) {
+  const { data } = await api.get('/exams', { params })
   return data
 }
 

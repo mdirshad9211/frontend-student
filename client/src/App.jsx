@@ -15,7 +15,7 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExamListPage } from './pages/ExamListPage'
-import { ExamDetailPage } from './pages/ExamDetailPage'
+import ExamDetailPage from './pages/ExamDetailPage'
 import { ProfilePage } from './pages/ProfilePage'
 
 import { AdminLogin } from './pages/admin/AdminLogin'
@@ -66,6 +66,8 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/exams" element={<ExamListPage />} />
+                <Route path="/results" element={<ExamListPage forcedSection="result" />} />
+                <Route path="/admit-cards" element={<ExamListPage forcedSection="admit_card" />} />
                 <Route path="/exams/:id" element={<ExamDetailPage />} />
               </Route>
 

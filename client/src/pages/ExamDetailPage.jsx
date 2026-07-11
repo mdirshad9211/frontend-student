@@ -79,6 +79,16 @@ export function ExamDetailPage() {
     () => sanitizeForDisplay(exam?.educationRequired, 120),
     [exam?.educationRequired]
   )
+  const examStates = useMemo(() => (Array.isArray(exam?.states) ? exam.states : []), [exam?.states])
+  const admitCardLink = useMemo(
+    () => (exam?.latestAdmitCardLink && isOfficialUrl(exam.latestAdmitCardLink) ? exam.latestAdmitCardLink : null),
+    [exam?.latestAdmitCardLink]
+  )
+  const resultLink = useMemo(
+    () => (exam?.latestResultLink && isOfficialUrl(exam.latestResultLink) ? exam.latestResultLink : null),
+    [exam?.latestResultLink]
+  )
+  const cleanDetails = useMemo(() => sanitizeForDisplay(exam?.details || '', 4200), [exam?.details])
 
   async function markApplied(status) {
     if (!isAuthed) return
@@ -134,6 +144,7 @@ export function ExamDetailPage() {
                   <Badge tone="neutral">No active deadline</Badge>
                 )}
                 {exam.category ? <Badge tone="accent">{exam.category}</Badge> : null}
+                {examStates.length ? <Badge tone="neutral">{examStates.join(', ')}</Badge> : null}
               </div>
             </div>
 
@@ -206,6 +217,22 @@ export function ExamDetailPage() {
                         Official apply link not available
                       </Button>
                     )}
+
+                    {admitCardLink ? (
+                      <a href={admitCardLink} target="_blank" rel="noreferrer">
+                        <Button className="w-full" variant="secondary">
+                          Download admit card <ExternalLink size={16} className="ml-2" />
+                        </Button>
+                      </a>
+                    ) : null}
+
+                    {resultLink ? (
+                      <a href={resultLink} target="_blank" rel="noreferrer">
+                        <Button className="w-full" variant="secondary">
+                          Download result <ExternalLink size={16} className="ml-2" />
+                        </Button>
+                      </a>
+                    ) : null}
 
                     {isAuthed ? (
                       <>
@@ -283,19 +310,47 @@ export function ExamDetailPage() {
                       </a>
                     </div>
                   ) : null}
+                  {admitCardLink ? (
+                    <div>
+                      <span className="font-semibold text-gray-900">Admit card</span>:{' '}
+                      <a
+                        className="font-semibold text-indigo-700 hover:text-indigo-600"
+                        href={admitCardLink}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Download admit card <ExternalLink size={14} className="inline" />
+                      </a>
+                    </div>
+                  ) : null}
+                  {resultLink ? (
+                    <div>
+                      <span className="font-semibold text-gray-900">Result</span>:{' '}
+                      <a
+                        className="font-semibold text-indigo-700 hover:text-indigo-600"
+                        href={resultLink}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Download result <ExternalLink size={14} className="inline" />
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               </CardBody>
             </Card>
 
-            {exam.details ? (
+            {cleanDetails ? (
               <Card>
                 <CardHeader
                   title="More details"
-                  subtitle="Key information from the notification (summary, text only)."
+                  subtitle="Clean summary from notification text."
                 />
                 <CardBody>
-                  <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line">
-                    {exam.details}
+                  <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                    <div className="max-h-90 overflow-auto whitespace-pre-line text-sm leading-7 text-gray-700">
+                      {cleanDetails}
+                    </div>
                   </div>
                 </CardBody>
               </Card>
@@ -306,4 +361,6 @@ export function ExamDetailPage() {
     </div>
   )
 }
+
+export default ExamDetailPage
 

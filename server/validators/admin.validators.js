@@ -8,6 +8,7 @@ const examSchema = z.object({
   educationRequired: z.string().min(2).max(120),
   educationKeys: z.array(z.string()).optional(),
   category: z.string().optional().nullable(),
+  states: z.array(z.string()).optional().nullable(),
   officialWebsite: z.string().url().optional().nullable(),
 });
 

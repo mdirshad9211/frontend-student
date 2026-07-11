@@ -1,5 +1,7 @@
 const dotenv = require('dotenv');
+const path = require('path');
 
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 function requireEnv(name) {
@@ -13,7 +15,7 @@ function requireEnv(name) {
 const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: process.env.PORT ? Number(process.env.PORT) : 5000,
-  MONGO_URI: process.env.MONGO_URI || '',
+  MONGO_URI: process.env.MONGO_URI || process.env.MONGODB_URI || '',
   JWT_SECRET: process.env.JWT_SECRET || '',
   EMAIL_USER: process.env.EMAIL_USER || '',
   EMAIL_PASS: process.env.EMAIL_PASS || '',
@@ -21,8 +23,21 @@ const env = {
 };
 
 function validateEnvForStartup() {
-  requireEnv('MONGO_URI');
-  requireEnv('JWT_SECRET');
+  if (env.NODE_ENV === 'production') {
+    requireEnv('MONGO_URI');
+    requireEnv('JWT_SECRET');
+  } else {
+    if (!env.MONGO_URI) {
+      env.MONGO_URI = 'mongodb://127.0.0.1:27017/gov_exam_tracker';
+      // eslint-disable-next-line no-console
+      console.warn('[env] MONGO_URI missing, using local default mongodb://127.0.0.1:27017/gov_exam_tracker');
+    }
+    if (!env.JWT_SECRET) {
+      env.JWT_SECRET = 'dev_only_change_me';
+      // eslint-disable-next-line no-console
+      console.warn('[env] JWT_SECRET missing, using development fallback secret');
+    }
+  }
   // EMAIL_* optional for local dev (we'll log instead of sending)
   return env;
 }

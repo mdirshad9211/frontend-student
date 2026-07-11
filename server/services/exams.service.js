@@ -4,8 +4,13 @@ const { ApiError } = require('../utils/ApiError');
 const { sanitizeExamText } = require('../utils/sanitizeExamText');
 const { inferExamCategory } = require('../utils/inferExamCategory');
 
-async function listExams() {
-  const exams = await Exam.find().sort({ createdAt: -1 });
+async function listExams({ state } = {}) {
+  const query = {};
+  if (state) {
+    query.$or = [{ states: state }, { states: 'All India' }];
+  }
+
+  const exams = await Exam.find(query).sort({ createdAt: -1 });
   const examIds = exams.map((e) => e._id);
   const cycles = await ExamCycle.aggregate([
     { $match: { examId: { $in: examIds } } },

@@ -18,6 +18,9 @@ import {
   ArrowRight,
   Flame,
   Calendar,
+  FileCheck2,
+  IdCard,
+  X,
 } from 'lucide-react'
 import { useAuth } from '../store/authStore'
 import { listExams } from '../features/exams/examsApi'
@@ -64,6 +67,7 @@ export function LandingPage() {
 
   const [exams, setExams] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showSignupPopup, setShowSignupPopup] = useState(false)
 
   const now = useMemo(() => new Date(), [])
   const startOfToday = useMemo(
@@ -71,7 +75,7 @@ export function LandingPage() {
     [now]
   )
 
-  const { hotExams, categoryTables } = useMemo(() => {
+  const { hotExams, categoryTables, recentResults, recentAdmitCards, statewise } = useMemo(() => {
     const active = []
     const byCategory = new Map()
     exams.forEach((exam) => {
@@ -93,7 +97,30 @@ export function LandingPage() {
       .map(([category, list]) => ({ category, exams: list }))
       .filter((t) => t.exams.length > 0)
       .sort((a, b) => b.exams.length - a.exams.length)
-    return { hotExams, categoryTables }
+
+    const recentResults = exams
+      .filter((e) => e.latestResultLink && isOfficialUrl(e.latestResultLink))
+      .sort((a, b) => new Date(b.latestResultDeclaredAt || 0) - new Date(a.latestResultDeclaredAt || 0))
+      .slice(0, 8)
+
+    const recentAdmitCards = exams
+      .filter((e) => e.latestAdmitCardLink && isOfficialUrl(e.latestAdmitCardLink))
+      .sort((a, b) => new Date(b.latestAdmitCardReleasedAt || 0) - new Date(a.latestAdmitCardReleasedAt || 0))
+      .slice(0, 8)
+
+    const stateBuckets = new Map()
+    exams.forEach((exam) => {
+      const states = Array.isArray(exam.states) && exam.states.length ? exam.states : ['All India']
+      states.forEach((state) => {
+        stateBuckets.set(state, (stateBuckets.get(state) || 0) + 1)
+      })
+    })
+    const statewise = Array.from(stateBuckets.entries())
+      .map(([state, count]) => ({ state, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 14)
+
+    return { hotExams, categoryTables, recentResults, recentAdmitCards, statewise }
   }, [exams, startOfToday, now])
 
   useEffect(() => {
@@ -112,12 +139,50 @@ export function LandingPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (isAuthed) return
+    const dismissed = localStorage.getItem('home_signup_popup_dismissed')
+    if (!dismissed) setShowSignupPopup(true)
+  }, [isAuthed])
+
+  function closeSignupPopup() {
+    setShowSignupPopup(false)
+    localStorage.setItem('home_signup_popup_dismissed', '1')
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
+      {!isAuthed && showSignupPopup ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/55 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-200">
+            <button
+              type="button"
+              onClick={closeSignupPopup}
+              className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+            <h3 className="mt-1 text-xl font-extrabold text-slate-900">Track jobs, admit cards, and results</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Create a free account to save applied jobs and get update alerts automatically.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Link to="/register" className="flex-1" onClick={closeSignupPopup}>
+                <Button className="w-full">Create account</Button>
+              </Link>
+              <Link to="/login" className="flex-1" onClick={closeSignupPopup}>
+                <Button variant="ghost" className="w-full">Login</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Hero – Sarkari-style compact */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-indigo-900">
+      <section className="relative overflow-hidden bg-linear-to-br from-gray-900 via-gray-800 to-indigo-900">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(99,102,241,0.15),transparent)]" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-indigo-400/30 to-transparent" />
         <Container className="relative py-12 sm:py-16">
           <motion.div
             variants={stagger}
@@ -145,6 +210,16 @@ export function LandingPage() {
                   Latest jobs <ArrowRight size={14} className="ml-1.5 inline" />
                 </Button>
               </Link>
+                <Link to="/results">
+                  <Button variant="ghost" className="border border-white/30 text-white hover:bg-white/10">
+                    Results
+                  </Button>
+                </Link>
+                <Link to="/admit-cards">
+                  <Button variant="ghost" className="border border-white/30 text-white hover:bg-white/10">
+                    Admit cards
+                  </Button>
+                </Link>
               <Link to={primaryCtaHref}>
                 <Button variant="ghost" className="border border-white/30 text-white hover:bg-white/10">
                   {primaryCtaLabel}
@@ -152,6 +227,80 @@ export function LandingPage() {
               </Link>
             </motion.div>
           </motion.div>
+        </Container>
+      </section>
+
+      <section className="border-t border-gray-200 bg-white py-8 sm:py-10" id="latest-updates">
+        <Container>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-gray-200 bg-slate-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                  <FileCheck2 size={18} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Latest results</h3>
+              </div>
+              <div className="space-y-2">
+                {recentResults.length ? recentResults.map((exam) => (
+                  <div key={`${exam._id}-result`} className="rounded-xl bg-white p-3 ring-1 ring-gray-200">
+                    <div className="text-sm font-semibold text-slate-900 line-clamp-2">{sanitizeForDisplay(exam.name, 70)}</div>
+                    <div className="mt-1 text-xs text-slate-500">Updated: {formatDate(exam.latestResultDeclaredAt)}</div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Link to={`/exams/${exam._id}`}><Button size="sm" variant="ghost">View</Button></Link>
+                      <a href={exam.latestResultLink} target="_blank" rel="noreferrer">
+                        <Button size="sm">Open result <ExternalLink size={12} className="ml-1 inline" /></Button>
+                      </a>
+                    </div>
+                  </div>
+                )) : <div className="text-sm text-slate-600">No result updates yet.</div>}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-slate-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                  <IdCard size={18} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Latest admit cards</h3>
+              </div>
+              <div className="space-y-2">
+                {recentAdmitCards.length ? recentAdmitCards.map((exam) => (
+                  <div key={`${exam._id}-admit`} className="rounded-xl bg-white p-3 ring-1 ring-gray-200">
+                    <div className="text-sm font-semibold text-slate-900 line-clamp-2">{sanitizeForDisplay(exam.name, 70)}</div>
+                    <div className="mt-1 text-xs text-slate-500">Updated: {formatDate(exam.latestAdmitCardReleasedAt)}</div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Link to={`/exams/${exam._id}`}><Button size="sm" variant="ghost">View</Button></Link>
+                      <a href={exam.latestAdmitCardLink} target="_blank" rel="noreferrer">
+                        <Button size="sm">Open admit card <ExternalLink size={12} className="ml-1 inline" /></Button>
+                      </a>
+                    </div>
+                  </div>
+                )) : <div className="text-sm text-slate-600">No admit card updates yet.</div>}
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      <section className="border-t border-gray-200 bg-slate-50 py-8 sm:py-10" id="statewise-exams">
+        <Container>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">State-wise exams</h2>
+              <p className="text-sm text-slate-600">Explore exams by your state preference.</p>
+            </div>
+            <Link to="/exams"><Button variant="ghost">View all states</Button></Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {(statewise || []).map((bucket) => (
+              <Link key={bucket.state} to={`/exams?state=${encodeURIComponent(bucket.state)}`}>
+                <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200 transition hover:shadow-md">
+                  <div className="text-sm font-semibold text-slate-900">{bucket.state}</div>
+                  <div className="mt-1 text-xs text-slate-500">{bucket.count} exam(s)</div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </Container>
       </section>
 
@@ -326,7 +475,7 @@ export function LandingPage() {
                       <ArrowRight size={16} className="text-indigo-500" />
                     </Link>
                     <div className="overflow-x-auto rounded-xl border border-gray-200">
-                      <table className="w-full min-w-[600px] border-collapse text-left text-sm">
+                      <table className="w-full min-w-150 border-collapse text-left text-sm">
                         <thead>
                           <tr className="border-b border-gray-200 bg-gray-50">
                             <th className="px-4 py-3 font-semibold text-gray-900">Exam</th>
@@ -400,7 +549,7 @@ export function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="border-t border-gray-200 bg-gradient-to-br from-gray-900 to-indigo-900 py-10 sm:py-12">
+      <section className="border-t border-gray-200 bg-linear-to-br from-gray-900 to-indigo-900 py-10 sm:py-12">
         <Container>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -417,7 +566,7 @@ export function LandingPage() {
               </p>
             </div>
             <Link to={primaryCtaHref}>
-              <Button className="min-w-[200px] bg-orange-500 text-white hover:bg-orange-400 shadow-lg shadow-orange-500/25">
+              <Button className="min-w-50 bg-orange-500 text-white hover:bg-orange-400 shadow-lg shadow-orange-500/25">
                 {isAuthed ? 'Open dashboard' : 'Sign up now'}
               </Button>
             </Link>

@@ -9,6 +9,7 @@ const examSchema = new mongoose.Schema(
     educationRequired: { type: String, required: true, trim: true },
     totalPosts: { type: Number, min: 0 },
     category: { type: String, trim: true },
+    states: [{ type: String, trim: true }],
     officialWebsite: { type: String, trim: true, default: null },
     // Optional normalized education keys (e.g. ['b.tech', 'b.sc']) for precise eligibility
     educationKeys: [{ type: String, trim: true }],
@@ -17,6 +18,10 @@ const examSchema = new mongoose.Schema(
     // Optional metadata to support scraping/imports
     source: { type: String, enum: ['sarkariresult'], default: null, index: true },
     sourceUrl: { type: String, trim: true, unique: true, sparse: true },
+    latestResultLink: { type: String, trim: true, default: null },
+    latestResultDeclaredAt: { type: Date, default: null },
+    latestAdmitCardLink: { type: String, trim: true, default: null },
+    latestAdmitCardReleasedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

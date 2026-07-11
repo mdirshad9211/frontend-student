@@ -1,5 +1,15 @@
 const mongoose = require('mongoose');
 
+const educationEntrySchema = new mongoose.Schema(
+  {
+    education: { type: String, trim: true, required: true },
+    specialization: { type: String, trim: true, default: null },
+    institute: { type: String, trim: true, default: null },
+    yearOfPassing: { type: Number, min: 1990, max: 2035, default: null },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -8,6 +18,7 @@ const userSchema = new mongoose.Schema(
     dob: { type: Date },
     category: { type: String, trim: true },
     education: { type: String, trim: true },
+    educationHistory: { type: [educationEntrySchema], default: [] },
     state: { type: String, trim: true },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     // Extra profile fields for better eligibility matching

@@ -5,9 +5,13 @@ const Exam = require('../models/Exam');
 const ExamCycle = require('../models/ExamCycle');
 const { sanitizeExamText } = require('../utils/sanitizeExamText');
 const { inferExamCategory } = require('../utils/inferExamCategory');
+const { inferExamStates } = require('../utils/inferExamStates');
+const { notifyAppliedUsersForExamUpdate } = require('./examUpdateNotification.service');
 
 const ROOT = 'https://www.sarkariresult.com';
 const LATEST_JOB_URL = `${ROOT}/latestjob/`;
+const RESULT_URL = `${ROOT}/results/`;
+const ADMIT_CARD_URL = `${ROOT}/admitcard/`;
 
 function parseIndianDate(value) {
   if (!value) return null;
@@ -60,6 +64,32 @@ function extractEducation(text) {
   return null;
 }
 
+function normalizeTitle(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\b(online|form|result|admit|card|download|link|latest|new)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenizeTitle(value) {
+  return normalizeTitle(value)
+    .split(' ')
+    .filter((x) => x && x.length > 2);
+}
+
+function scoreNameMatch(a, b) {
+  const aa = tokenizeTitle(a);
+  const bb = new Set(tokenizeTitle(b));
+  if (!aa.length || !bb.size) return 0;
+  let hits = 0;
+  for (const t of aa) {
+    if (bb.has(t)) hits += 1;
+  }
+  return hits / Math.max(aa.length, 1);
+}
+
 function isExternalApplyUrl(href, pageUrl) {
   if (!href || href.startsWith('#') || href.startsWith('javascript:')) return null;
   try {
@@ -70,6 +100,18 @@ function isExternalApplyUrl(href, pageUrl) {
   } catch {
     return null;
   }
+}
+
+function extractReadablePageText($) {
+  $('script, style, noscript, iframe, nav, footer, header').remove();
+  const container =
+    $('.entry-content').first() ||
+    $('.post').first() ||
+    $('.content').first() ||
+    $('.article').first() ||
+    $('body').first();
+  const text = (container && container.length ? container : $('body')).text();
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 function rankApplyUrl(href) {
@@ -147,11 +189,47 @@ function extractOfficialApplyUrl($, pageUrl) {
   return best.url || null;
 }
 
+function extractOfficialUpdateUrl($, pageUrl, type) {
+  const typeWords =
+    type === 'result'
+      ? ['result', 'score card', 'marks', 'download result']
+      : ['admit card', 'hall ticket', 'call letter', 'download admit'];
+
+  let best = { url: null, rank: 0 };
+  function consider(url) {
+    if (!url) return;
+    const r = rankApplyUrl(url);
+    if (r > best.rank || (r === best.rank && !best.url)) best = { url, rank: r };
+  }
+
+  $('tr').each((_, tr) => {
+    const $tr = $(tr);
+    const rowText = $tr.text().replace(/\s+/g, ' ').toLowerCase();
+    if (!typeWords.some((w) => rowText.includes(w))) return;
+    $tr.find('a[href]').each((__, a) => {
+      const full = isExternalApplyUrl($(a).attr('href'), pageUrl);
+      if (full) consider(full);
+    });
+  });
+
+  $('a[href]').each((_, a) => {
+    const $a = $(a);
+    const t = $a.text().replace(/\s+/g, ' ').trim().toLowerCase();
+    const nearby = $a.closest('tr, p, li, div, td').text().replace(/\s+/g, ' ').toLowerCase();
+    const hasKeyword = typeWords.some((w) => t.includes(w) || nearby.includes(w));
+    if (!hasKeyword && t !== 'click here' && t !== 'download') return;
+    const full = isExternalApplyUrl($a.attr('href'), pageUrl);
+    if (full) consider(full);
+  });
+
+  return best.url || null;
+}
+
 async function parseJobDetail(url) {
   const res = await axios.get(url, { timeout: 20000 });
   const html = res.data;
   const $ = cheerio.load(html);
-  const fullText = $('body').text().replace(/\s+/g, ' ').trim();
+  const fullText = extractReadablePageText($);
 
   const totalPosts = extractTotalPosts(fullText);
 
@@ -197,6 +275,7 @@ async function parseJobDetail(url) {
   const conductingBody = sanitizeExamText(conductingBodyRaw, 220);
 
   const category = inferExamCategory({ name: title, url });
+  const states = inferExamStates(`${title} ${fullText}`);
   const officialApplyUrl = extractOfficialApplyUrl($, url);
   const details = sanitizeExamText(fullText, 2400);
 
@@ -204,6 +283,7 @@ async function parseJobDetail(url) {
     name: title || 'Government Exam',
     conductingBody: conductingBody || 'See notification',
     category,
+    states,
     minAge,
     maxAge,
     educationRequired,
@@ -214,6 +294,46 @@ async function parseJobDetail(url) {
     officialApplyUrl,
     details,
   };
+}
+
+async function scrapeListingSection({ pageUrl, includePattern, limit, kind }) {
+  const res = await axios.get(pageUrl, { timeout: 20000 });
+  const html = res.data;
+  const $ = cheerio.load(html);
+  const items = [];
+
+  $('li a').each((_, el) => {
+    const $a = $(el);
+    const href = $a.attr('href');
+    const text = $a.text().trim();
+    if (!href || !text) return;
+    if (!href.startsWith('http')) return;
+    if (includePattern && !includePattern.test(text)) return;
+    items.push({ title: text, url: href, officialUrl: null });
+  });
+
+  const uniqueItems = [];
+  const seen = new Set();
+  for (const item of items) {
+    if (seen.has(item.url)) continue;
+    seen.add(item.url);
+    uniqueItems.push(item);
+    if (uniqueItems.length >= limit) break;
+  }
+
+  for (const item of uniqueItems) {
+    try {
+      const resDetail = await axios.get(item.url, { timeout: 20000 });
+      const $$ = cheerio.load(resDetail.data);
+      if (kind === 'result' || kind === 'admit_card') {
+        item.officialUrl = extractOfficialUpdateUrl($$, item.url, kind);
+      }
+    } catch (e) {
+      console.error('Failed to resolve official link for update item', item.title, e.message);
+    }
+  }
+
+  return uniqueItems;
 }
 
 async function scrapeLatestJobs(limit) {
@@ -253,6 +373,37 @@ async function scrapeLatestJobs(limit) {
   return uniqueJobs;
 }
 
+async function scrapeLatestResults(limit) {
+  console.log(`Fetching latest results from ${RESULT_URL}`);
+  return scrapeListingSection({ pageUrl: RESULT_URL, includePattern: /Result|Download/i, limit, kind: 'result' });
+}
+
+async function scrapeLatestAdmitCards(limit) {
+  console.log(`Fetching latest admit cards from ${ADMIT_CARD_URL}`);
+  return scrapeListingSection({ pageUrl: ADMIT_CARD_URL, includePattern: /Admit Card|Hall Ticket|Call Letter/i, limit, kind: 'admit_card' });
+}
+
+async function findMatchingExamForUpdate(item) {
+  const candidates = await Exam.find({}, { name: 1, sourceUrl: 1 }).lean();
+  if (!candidates.length) return null;
+
+  let best = null;
+  let bestScore = 0;
+  for (const c of candidates) {
+    if (c.sourceUrl && item.url && c.sourceUrl === item.url) {
+      return c;
+    }
+    const s = scoreNameMatch(item.title, c.name);
+    if (s > bestScore) {
+      bestScore = s;
+      best = c;
+    }
+  }
+
+  if (!best || bestScore < 0.35) return null;
+  return best;
+}
+
 async function upsertExamAndCycle(job) {
   const detail = await parseJobDetail(job.url);
 
@@ -277,6 +428,7 @@ async function upsertExamAndCycle(job) {
       educationRequired: detail.educationRequired || 'See notification',
       totalPosts: detail.totalPosts || null,
       category: detail.category || null,
+      states: Array.isArray(detail.states) ? detail.states : [],
       officialWebsite,
       details: detail.details || null,
       source: 'sarkariresult',
@@ -300,6 +452,10 @@ async function upsertExamAndCycle(job) {
     }
     if (detail.category && (!exam.category || exam.category === 'Other')) {
       exam.category = detail.category;
+      touched = true;
+    }
+    if (Array.isArray(detail.states) && detail.states.length > 0) {
+      exam.states = detail.states;
       touched = true;
     }
     if (detail.officialApplyUrl) {
@@ -353,11 +509,66 @@ async function upsertExamAndCycle(job) {
   return { exam, cycle, created: true };
 }
 
+async function upsertExamUpdate({ item, type }) {
+  const matched = await findMatchingExamForUpdate(item);
+  if (!matched) return { matched: false, notified: 0 };
+
+  const exam = await Exam.findById(matched._id);
+  if (!exam) return { matched: false, notified: 0 };
+
+  let changed = false;
+  const safeOfficialUpdateLink =
+    item.officialUrl && !String(item.officialUrl).toLowerCase().includes('sarkariresult.com')
+      ? item.officialUrl
+      : null;
+  let updateLink = null;
+  let updateDate = new Date();
+  if (type === 'result') {
+    if (safeOfficialUpdateLink && exam.latestResultLink !== safeOfficialUpdateLink) {
+      exam.latestResultLink = safeOfficialUpdateLink;
+      exam.latestResultDeclaredAt = updateDate;
+      changed = true;
+    } else if (!safeOfficialUpdateLink && exam.latestResultLink && String(exam.latestResultLink).includes('sarkariresult.com')) {
+      exam.latestResultLink = null;
+      changed = true;
+    }
+    updateLink = exam.latestResultLink;
+    updateDate = exam.latestResultDeclaredAt || updateDate;
+  } else {
+    if (safeOfficialUpdateLink && exam.latestAdmitCardLink !== safeOfficialUpdateLink) {
+      exam.latestAdmitCardLink = safeOfficialUpdateLink;
+      exam.latestAdmitCardReleasedAt = updateDate;
+      changed = true;
+    } else if (!safeOfficialUpdateLink && exam.latestAdmitCardLink && String(exam.latestAdmitCardLink).includes('sarkariresult.com')) {
+      exam.latestAdmitCardLink = null;
+      changed = true;
+    }
+    updateLink = exam.latestAdmitCardLink;
+    updateDate = exam.latestAdmitCardReleasedAt || updateDate;
+  }
+
+  if (!changed) return { matched: true, changed: false, notified: 0 };
+
+  await exam.save();
+  const { notified } = await notifyAppliedUsersForExamUpdate({
+    exam,
+    updateType: type,
+    link: updateLink,
+    date: updateDate,
+  });
+  return { matched: true, changed: true, notified };
+}
+
 async function runSarkariScraper({ limit = 40 } = {}) {
   const jobs = await scrapeLatestJobs(limit);
+  const results = await scrapeLatestResults(limit);
+  const admitCards = await scrapeLatestAdmitCards(limit);
   let createdExams = 0;
   let createdCycles = 0;
   let skippedCycles = 0;
+  let resultUpdates = 0;
+  let admitCardUpdates = 0;
+  let notificationsCreated = 0;
 
   for (const job of jobs) {
     try {
@@ -375,11 +586,40 @@ async function runSarkariScraper({ limit = 40 } = {}) {
     }
   }
 
+  for (const item of results) {
+    try {
+      const out = await upsertExamUpdate({ item, type: 'result' });
+      if (out.changed) {
+        resultUpdates += 1;
+        notificationsCreated += out.notified || 0;
+      }
+    } catch (e) {
+      console.error('Failed to import result update', item.title, e.message);
+    }
+  }
+
+  for (const item of admitCards) {
+    try {
+      const out = await upsertExamUpdate({ item, type: 'admit_card' });
+      if (out.changed) {
+        admitCardUpdates += 1;
+        notificationsCreated += out.notified || 0;
+      }
+    } catch (e) {
+      console.error('Failed to import admit card update', item.title, e.message);
+    }
+  }
+
   return {
     jobsProcessed: jobs.length,
+    resultsProcessed: results.length,
+    admitCardsProcessed: admitCards.length,
     createdExams,
     createdCycles,
     skippedCycles,
+    resultUpdates,
+    admitCardUpdates,
+    notificationsCreated,
   };
 }
 

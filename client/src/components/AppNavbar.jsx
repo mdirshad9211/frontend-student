@@ -1,7 +1,9 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { LayoutDashboard, LogOut, User } from 'lucide-react'
 import { Container } from './Container'
 import { useAuth } from '../store/authStore'
+import { STATE_OPTIONS, getSelectedState, setSelectedState } from '../utils/stateFilter'
 
 const navLinkClass = ({ isActive }) =>
   `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
@@ -11,6 +13,21 @@ const navLinkClass = ({ isActive }) =>
 export function AppNavbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [selectedState, setSelectedStateLocal] = useState('all')
+
+  useEffect(() => {
+    setSelectedStateLocal(getSelectedState())
+  }, [])
+
+  function onStateChange(nextState) {
+    setSelectedState(nextState)
+    setSelectedStateLocal(nextState)
+    if (nextState === 'all') {
+      navigate('/exams')
+      return
+    }
+    navigate(`/exams?state=${encodeURIComponent(nextState)}`)
+  }
 
   return (
     <div className="sticky top-0 z-40 border-b border-gray-100 bg-white/80 backdrop-blur">
@@ -28,6 +45,23 @@ export function AppNavbar() {
             <User size={16} />
             Profile
           </NavLink>
+          <NavLink className={navLinkClass} to="/results">
+            Results
+          </NavLink>
+          <NavLink className={navLinkClass} to="/admit-cards">
+            Admit
+          </NavLink>
+          <select
+            value={selectedState}
+            onChange={(e) => onStateChange(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+            aria-label="Select state"
+          >
+            <option value="all">All states</option>
+            {STATE_OPTIONS.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
 
           <button
             onClick={() => {

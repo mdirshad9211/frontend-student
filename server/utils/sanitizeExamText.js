@@ -19,6 +19,12 @@ function sanitizeExamText(value, maxLength = 500) {
     .replace(/function\s*\(\s*d\s*,\s*o\s*,\s*a\s*,\s*l\s*\)[^)]*/gi, ' ')
     .replace(/WWW\.SARKARIRESULT\.COM/gi, ' ')
     .replace(/SARKARI\s*RESULT/gi, ' ')
+    .replace(/Skip to content/gi, ' ')
+    .replace(/\bMenu\s+Home\s+Latest\s+job\s+Admit\s+Card\s+Results\b/gi, ' ')
+    .replace(/\.[a-z0-9_-]+\s*\{[^{}]*\}/gi, ' ')
+    .replace(/@[a-z-]+\s*\([^)]*\)\s*\{[^{}]*\}/gi, ' ')
+    .replace(/\(function\s*\([^)]*\)\s*\{[\s\S]*?\}\)\s*\([^)]*\);?/gi, ' ')
+    .replace(/https?:\/\/\s*\/wp-content\/[\w\-./?=&]+/gi, ' ')
     .trim();
   // Remove any remaining fragments that look like code
   s = s.replace(/\b(ai|d)\s*=\s*\w+\.createElement/g, ' ').replace(/\s+/g, ' ').trim();

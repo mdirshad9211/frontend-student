@@ -9,7 +9,7 @@ async function main() {
   }
   await connectDB(env.MONGO_URI);
 
-  const limit = Number(process.env.SARKARI_LIMIT || '40');
+  const limit = Number(process.env.SARKARI_LIMIT || '100');
   const result = await runSarkariScraper({ limit });
   console.log('Scrape complete:', result);
   process.exit(0);
