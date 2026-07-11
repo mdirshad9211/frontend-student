@@ -50,6 +50,7 @@ async function getExamById(examId) {
   o.name = sanitizeExamText(o.name, 200) || o.name;
   o.conductingBody = sanitizeExamText(o.conductingBody, 220) || o.conductingBody;
   o.educationRequired = sanitizeExamText(o.educationRequired, 120) || o.educationRequired;
+  o.details = sanitizeExamText(o.details || '', 4200);
   if (!o.category || o.category === 'Other') {
     o.category = inferExamCategory({ name: o.name, url: o.officialWebsite || o.sourceUrl || '' });
   }
