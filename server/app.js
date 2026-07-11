@@ -21,7 +21,7 @@ function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CLIENT_URL,
+      origin: [env.CLIENT_URL, 'https://www.sarkora.in'],
       credentials: true,
     })
   );
