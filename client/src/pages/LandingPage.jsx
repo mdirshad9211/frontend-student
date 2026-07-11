@@ -199,7 +199,7 @@ export function LandingPage() {
               variants={fadeUp}
               className="mt-6 text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-5xl"
             >
-              Sarkari Exam Tracker
+              Sarkora – Government exams, admit cards, results, and more
             </motion.h1>
             <motion.p variants={fadeUp} className="mx-auto mt-3 max-w-xl text-base text-gray-300">
               Latest open forms, results, and deadlines. One place. Official apply links only.

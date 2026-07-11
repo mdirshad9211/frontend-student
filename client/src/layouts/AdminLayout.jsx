@@ -12,7 +12,7 @@ export function AdminLayout({ showNav = false }) {
       <div className="border-b border-gray-100 bg-white/80 backdrop-blur">
         <Container className="flex items-center justify-between py-3">
           <Link to="/admin/dashboard" className="text-sm font-extrabold tracking-tight text-gray-900">
-            Admin · Exam Tracker
+            Admin · Sarkora
           </Link>
           {showNav ? (
             <button

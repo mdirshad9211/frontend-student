@@ -43,7 +43,7 @@ export function PublicNavbar() {
             <Landmark size={18} />
           </div>
           <div className="leading-tight">
-            <div className="text-sm font-extrabold tracking-tight text-slate-900">Exam Tracker</div>
+            <div className="text-sm font-extrabold tracking-tight text-slate-900">Sarkora</div>
             <div className="text-xs text-slate-500">
               {showAuthed ? `Welcome, ${user?.name || 'User'}` : 'Government Exam MVP'}
             </div>

@@ -11,7 +11,7 @@ export function Footer() {
       <Container className="py-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-sm font-extrabold tracking-tight text-slate-900">Exam Tracker</div>
+            <div className="text-sm font-extrabold tracking-tight text-slate-900">Sarkora</div>
             <div className="mt-1 text-sm text-slate-600">
               Discover eligible exams, track deadlines, and never miss an application window.
             </div>
@@ -37,7 +37,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 text-xs text-slate-500">
-          © {new Date().getFullYear()} Exam Tracker. Not affiliated with any government body.
+          © {new Date().getFullYear()} Sarkora. Not affiliated with any government body.
         </div>
       </Container>
     </footer>

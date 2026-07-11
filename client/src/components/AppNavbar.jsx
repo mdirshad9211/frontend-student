@@ -33,7 +33,7 @@ export function AppNavbar() {
     <div className="sticky top-0 z-40 border-b border-gray-100 bg-white/80 backdrop-blur">
       <Container className="flex items-center justify-between py-3">
         <Link to="/dashboard" className="text-sm font-extrabold tracking-tight text-gray-900">
-          Exam Tracker
+          Sarkora
         </Link>
 
         <div className="flex items-center gap-2">
