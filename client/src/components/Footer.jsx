@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { Instagram, Send } from 'lucide-react'
+import logo from '../assets/logo.jpeg'
 import { Container } from './Container'
 import { useAuth } from '../store/authStore'
 
@@ -11,12 +13,12 @@ export function Footer() {
       <Container className="py-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-sm font-extrabold tracking-tight text-slate-900">Sarkora</div>
+            <div className="flex items-center gap-2 text-sm font-extrabold tracking-tight text-slate-900"><img src={logo} alt="Sarkora" className="h-24 w-24 rounded-xl object-cover shadow-sm" /></div>
             <div className="mt-1 text-sm text-slate-600">
               Discover eligible exams, track deadlines, and never miss an application window.
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm font-semibold">
+          <div className="flex flex-wrap items-center gap-4 text-sm font-semibold">
             <Link className="text-slate-600 hover:text-indigo-600" to="/exams">
               Exams
             </Link>
@@ -34,13 +36,20 @@ export function Footer() {
                 </Link>
               </>
             )}
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+              <a href="https://www.instagram.com/sarkora_official/" target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"><Instagram size={19} /></a>
+              <a href="https://t.me/sarkora_official" target="_blank" rel="noreferrer" aria-label="Telegram" title="Telegram" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"><Send size={19} /></a>
+            </div>
           </div>
         </div>
         <div className="mt-8 text-xs text-slate-500">
-          © {new Date().getFullYear()} Sarkora. Not affiliated with any government body.
+          � {new Date().getFullYear()} Sarkora. Not affiliated with any government body.
         </div>
       </Container>
     </footer>
   )
 }
+
+
+
 

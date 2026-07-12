@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { LayoutDashboard, LogOut, User } from 'lucide-react'
+import logo from '../assets/logo.jpeg'
 import { Container } from './Container'
 import { useAuth } from '../store/authStore'
 import { STATE_OPTIONS, getSelectedState, setSelectedState } from '../utils/stateFilter'
@@ -31,12 +32,13 @@ export function AppNavbar() {
 
   return (
     <div className="sticky top-0 z-40 border-b border-gray-100 bg-white/80 backdrop-blur">
-      <Container className="flex items-center justify-between py-3">
-        <Link to="/dashboard" className="text-sm font-extrabold tracking-tight text-gray-900">
+      <Container className="flex flex-wrap items-center justify-between gap-3 py-3">
+        <Link to="/dashboard" className="flex items-center gap-2 text-sm font-extrabold tracking-tight text-gray-900">
+          <img src={logo} alt="Sarkora" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
           Sarkora
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 md:w-auto md:pb-0">
           <NavLink className={navLinkClass} to="/dashboard">
             <LayoutDashboard size={16} />
             Dashboard
@@ -82,4 +84,7 @@ export function AppNavbar() {
     </div>
   )
 }
+
+
+
 
