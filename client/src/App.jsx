@@ -9,6 +9,7 @@ import { AdminLayout } from './layouts/AdminLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminRoute } from './components/AdminRoute'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { Seo } from './components/Seo'
 
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
@@ -107,4 +108,5 @@ export default function App() {
     </ErrorBoundary>
   )
 }
+
 
