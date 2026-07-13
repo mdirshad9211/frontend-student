@@ -10,6 +10,8 @@ const {
   adminListExams,
   adminListExamCycles,
   adminListUsers,
+  adminListResults,
+  adminListAdmitCards,
   adminRunSarkariScraper,
 } = require('../controllers/admin.controller');
 
@@ -26,9 +28,13 @@ router.get('/exam-cycles', adminListExamCycles);
 router.post('/exam-cycle', validateBody(examCycleSchema), adminCreateExamCycle);
 
 router.get('/users', adminListUsers);
+router.get('/results', adminListResults);
+router.get('/admit-cards', adminListAdmitCards);
 
 // Trigger SarkariResult scraper from admin panel
 router.post('/scrape/sarkariresult', adminRunSarkariScraper);
 
 module.exports = router;
+
+
 

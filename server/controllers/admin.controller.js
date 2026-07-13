@@ -8,6 +8,7 @@ const {
   listExamCycles,
 } = require('../services/exams.service');
 const { listUsers } = require('../services/user.service');
+const { listUpdates } = require('../services/updates.service');
 const { runSarkariScraper } = require('../services/sarkariScraper.service');
 
 const adminListExams = asyncHandler(async (req, res) => {
@@ -57,6 +58,9 @@ const adminListUsers = asyncHandler(async (req, res) => {
   });
 });
 
+const adminListResults = asyncHandler(async (_req, res) => res.json({ results: await listUpdates('result') }));
+const adminListAdmitCards = asyncHandler(async (_req, res) => res.json({ admitCards: await listUpdates('admit_card') }));
+
 const adminRunSarkariScraper = asyncHandler(async (req, res) => {
   const limit = Number(req.body?.limit || 40);
   const safeLimit = Number.isNaN(limit) || limit <= 0 ? 40 : Math.min(limit, 150);
@@ -72,6 +76,10 @@ module.exports = {
   adminCreateExamCycle,
   adminListExamCycles,
   adminListUsers,
+  adminListResults,
+  adminListAdmitCards,
   adminRunSarkariScraper,
 };
+
+
 

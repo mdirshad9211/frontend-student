@@ -180,15 +180,15 @@ export function LandingPage() {
       ) : null}
 
       {/* Hero – Sarkari-style compact */}
-      <section className="relative overflow-hidden bg-linear-to-br from-gray-900 via-gray-800 to-indigo-900">
+      <section className="relative overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(99,102,241,0.15),transparent)]" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-indigo-400/30 to-transparent" />
-        <Container className="relative py-12 sm:py-16">
+        <Container className="relative py-10 sm:py-14">
           <motion.div
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="mx-auto max-w-4xl text-center"
+            className="mx-auto max-w-3xl text-center"
           >
             <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-2">
               <StatPill label="Eligibility-first" icon={CheckCircle2} />
@@ -197,14 +197,14 @@ export function LandingPage() {
             </motion.div>
             <motion.h1
               variants={fadeUp}
-              className="mt-6 text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-5xl"
+              className="mt-5 text-3xl font-extrabold tracking-tight text-white sm:text-4xl"
             >
-              Sarkora – Government exams, admit cards, results, and more
+              Government exam updates, without the noise
             </motion.h1>
             <motion.p variants={fadeUp} className="mx-auto mt-3 max-w-xl text-base text-gray-300">
-              Latest open forms, results, and deadlines. One place. Official apply links only.
+              Track forms, admit cards, and results in one clear place - with official links and timely updates.
             </motion.p>
-            <motion.div variants={fadeUp} className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <motion.div variants={fadeUp} className="mt-6 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center">
               <Link to="/exams">
                 <Button className="bg-orange-500 text-white hover:bg-orange-400 shadow-lg shadow-orange-500/25">
                   Latest jobs <ArrowRight size={14} className="ml-1.5 inline" />
@@ -245,7 +245,7 @@ export function LandingPage() {
                   <div key={`${exam._id}-result`} className="rounded-xl bg-white p-3 ring-1 ring-gray-200">
                     <div className="text-sm font-semibold text-slate-900 line-clamp-2">{sanitizeForDisplay(exam.name, 70)}</div>
                     <div className="mt-1 text-xs text-slate-500">Updated: {formatDate(exam.latestResultDeclaredAt)}</div>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       <Link to={`/exams/${exam._id}`}><Button size="sm" variant="ghost">View</Button></Link>
                       <a href={exam.latestResultLink} target="_blank" rel="noreferrer">
                         <Button size="sm">Open result <ExternalLink size={12} className="ml-1 inline" /></Button>
@@ -268,7 +268,7 @@ export function LandingPage() {
                   <div key={`${exam._id}-admit`} className="rounded-xl bg-white p-3 ring-1 ring-gray-200">
                     <div className="text-sm font-semibold text-slate-900 line-clamp-2">{sanitizeForDisplay(exam.name, 70)}</div>
                     <div className="mt-1 text-xs text-slate-500">Updated: {formatDate(exam.latestAdmitCardReleasedAt)}</div>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       <Link to={`/exams/${exam._id}`}><Button size="sm" variant="ghost">View</Button></Link>
                       <a href={exam.latestAdmitCardLink} target="_blank" rel="noreferrer">
                         <Button size="sm">Open admit card <ExternalLink size={12} className="ml-1 inline" /></Button>
@@ -284,7 +284,7 @@ export function LandingPage() {
 
       <section className="border-t border-gray-200 bg-slate-50 py-8 sm:py-10" id="statewise-exams">
         <Container>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">State-wise exams</h2>
               <p className="text-sm text-slate-600">Explore exams by your state preference.</p>
@@ -398,7 +398,7 @@ export function LandingPage() {
                           ) : null}
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
                         {isActive && d !== null && d <= 7 ? (
                           <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
                             Closing in {d} day{d === 1 ? '' : 's'}
@@ -474,7 +474,25 @@ export function LandingPage() {
                       </span>
                       <ArrowRight size={16} className="text-indigo-500" />
                     </Link>
-                    <div className="overflow-x-auto rounded-xl border border-gray-200">
+                    <div className="space-y-3 md:hidden">
+                      {block.exams.map((exam) => {
+                        const cycle = exam.latestCycle
+                        const d = cycle?.applicationEnd ? daysUntil(cycle.applicationEnd) : null
+                        const endStr = cycle?.applicationEnd ? formatDate(cycle.applicationEnd) : 'Not announced'
+                        const applyHref = cycle?.applyLink && isOfficialUrl(cycle.applyLink) ? cycle.applyLink : null
+                        return (
+                          <div key={exam._id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <Link to={`/exams/${exam._id}`} className="block text-sm font-bold text-slate-900 hover:text-indigo-700">{sanitizeForDisplay(exam.name, 100) || 'Exam details'}</Link>
+                            <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                              <div><div className="text-slate-500">Last date</div><div className="mt-1 font-semibold text-slate-800">{endStr}</div></div>
+                              <div><div className="text-slate-500">Status</div><div className="mt-1 font-semibold text-emerald-700">{d !== null && d <= 7 ? `Closing in ${d}d` : 'Active'}</div></div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-2"><Link to={`/exams/${exam._id}`}><Button size="sm" variant="ghost">View details</Button></Link>{applyHref ? <a href={applyHref} target="_blank" rel="noreferrer"><Button size="sm" className="bg-orange-500 text-white hover:bg-orange-400">Apply</Button></a> : null}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="hidden overflow-x-auto rounded-xl border border-gray-200 md:block">
                       <table className="w-full min-w-150 border-collapse text-left text-sm">
                         <thead>
                           <tr className="border-b border-gray-200 bg-gray-50">
@@ -576,3 +594,6 @@ export function LandingPage() {
     </div>
   )
 }
+
+
+

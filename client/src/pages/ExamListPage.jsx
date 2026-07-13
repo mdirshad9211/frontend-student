@@ -253,8 +253,8 @@ export function ExamListPage({ forcedSection = null }) {
       if (statusFilter === 'upcoming' && !isUpcoming) return false
       if (statusFilter === 'expired' && !isExpired) return false
 
-      if (section === 'result' && !(e.latestResultLink && isOfficialUrl(e.latestResultLink))) return false
-      if (section === 'admit_card' && !(e.latestAdmitCardLink && isOfficialUrl(e.latestAdmitCardLink))) return false
+      if (section === 'result' && !(e.latestResultDeclaredAt || e.latestResultLink)) return false
+      if (section === 'admit_card' && !(e.latestAdmitCardReleasedAt || e.latestAdmitCardLink)) return false
 
       return true
     })
@@ -289,7 +289,7 @@ export function ExamListPage({ forcedSection = null }) {
       <Container>
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="text-xs font-semibold tracking-wide text-indigo-700">EXAMS</div>
+            <div className="text-xs font-semibold tracking-wide text-indigo-700">{section === 'result' ? 'RESULTS' : section === 'admit_card' ? 'ADMIT CARDS' : 'EXAMS'}</div>
             <div className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">
               {section === 'result'
                 ? 'Latest results'
@@ -406,4 +406,5 @@ export function ExamListPage({ forcedSection = null }) {
     </div>
   )
 }
+
 

@@ -17,6 +17,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExamListPage } from './pages/ExamListPage'
 import ExamDetailPage from './pages/ExamDetailPage'
+import { UpdateListPage, UpdateDetailPage } from './pages/UpdatePages'
 import { ProfilePage } from './pages/ProfilePage'
 
 import { AdminLogin } from './pages/admin/AdminLogin'
@@ -24,6 +25,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard'
 import { AdminExamManager } from './pages/admin/AdminExamManager'
 import { AdminExamCycleManager } from './pages/admin/AdminExamCycleManager'
 import { AdminUserManager } from './pages/admin/AdminUserManager'
+import { AdminUpdates } from './pages/admin/AdminUpdates'
 
 function PageTransition({ children }) {
   const location = useLocation()
@@ -67,8 +69,10 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/exams" element={<ExamListPage />} />
-                <Route path="/results" element={<ExamListPage forcedSection="result" />} />
-                <Route path="/admit-cards" element={<ExamListPage forcedSection="admit_card" />} />
+                <Route path="/results" element={<UpdateListPage type="result" />} />
+                <Route path="/results/:id" element={<UpdateDetailPage type="result" />} />
+                <Route path="/admit-cards" element={<UpdateListPage type="admit_card" />} />
+                <Route path="/admit-cards/:id" element={<UpdateDetailPage type="admit_card" />} />
                 <Route path="/exams/:id" element={<ExamDetailPage />} />
               </Route>
 
@@ -98,6 +102,8 @@ export default function App() {
                 <Route path="/admin/exams" element={<AdminExamManager />} />
                 <Route path="/admin/exam-cycles" element={<AdminExamCycleManager />} />
                 <Route path="/admin/users" element={<AdminUserManager />} />
+                <Route path="/admin/results" element={<AdminUpdates type="result" />} />
+                <Route path="/admin/admit-cards" element={<AdminUpdates type="admit_card" />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -108,5 +114,8 @@ export default function App() {
     </ErrorBoundary>
   )
 }
+
+
+
 
 

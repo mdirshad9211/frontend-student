@@ -3,6 +3,8 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const Exam = require('../models/Exam');
 const ExamCycle = require('../models/ExamCycle');
+const Result = require('../models/Result');
+const AdmitCard = require('../models/AdmitCard');
 const { sanitizeExamText } = require('../utils/sanitizeExamText');
 const { inferExamCategory } = require('../utils/inferExamCategory');
 const { inferExamStates } = require('../utils/inferExamStates');
@@ -516,13 +518,21 @@ async function upsertExamUpdate({ item, type }) {
   const exam = await Exam.findById(matched._id);
   if (!exam) return { matched: false, notified: 0 };
 
-  let changed = false;
+  const UpdateModel = type === 'result' ? Result : AdmitCard;
+  const existingUpdate = await UpdateModel.findOne({ sourceUrl: item.url });
+  const storedUpdate = await UpdateModel.findOneAndUpdate(
+    { sourceUrl: item.url },
+    { examId: exam._id, title: item.title, officialLink: item.officialUrl || null, details: item.details || exam.details || '', publishedAt: new Date() },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  let changed = !existingUpdate;
   const safeOfficialUpdateLink =
     item.officialUrl && !String(item.officialUrl).toLowerCase().includes('sarkariresult.com')
       ? item.officialUrl
       : null;
   let updateLink = null;
-  let updateDate = new Date();
+  let updateDate = storedUpdate.publishedAt || new Date();
   if (type === 'result') {
     if (safeOfficialUpdateLink && exam.latestResultLink !== safeOfficialUpdateLink) {
       exam.latestResultLink = safeOfficialUpdateLink;
@@ -624,4 +634,6 @@ async function runSarkariScraper({ limit = 40 } = {}) {
 }
 
 module.exports = { runSarkariScraper };
+
+
 

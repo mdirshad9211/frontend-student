@@ -8,6 +8,7 @@
     "start": "node server.js",
     "seed:admin": "node scripts/seedAdmin.js",
     "scrape:sarkariresult": "node scripts/scrapeSarkariResult.js",
+    "migrate:updates": "node scripts/migrateExamUpdates.js",
     "clean:exams": "node scripts/cleanExamData.js",
     "clear:sarkari": "node scripts/clearSarkariExams.js"
   },
@@ -31,3 +32,5 @@
     "nodemon": "^3.1.14"
   }
 }
+
+

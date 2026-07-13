@@ -40,3 +40,9 @@ export async function adminRunSarkariScraper(limit = 40) {
   return data
 }
 
+
+export async function adminListUpdates(type) {
+  const { data } = await api.get(type === 'result' ? '/admin/results' : '/admin/admit-cards')
+  return data
+}
+

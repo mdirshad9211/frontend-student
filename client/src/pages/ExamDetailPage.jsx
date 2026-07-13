@@ -18,6 +18,23 @@ import { formatDate, daysUntil } from '../utils/date'
 import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
 import { isOfficialUrl } from '../utils/url'
 
+function parseNotificationDetails(details) {
+  const labelPattern = /(Name Of Post|Post Date\s*\/\s*Update|Short Information|Important Dates|Application Begin|Last Date(?:\s+for)? Apply Online|Last Date Pay Exam Fee|Exam Date|Admit Card Available|Application Fee|Age Limit|Minimum Age|Maximum Age|Age Relaxation|Vacancy Details|Total Posts?|Post Name|Eligibility|More Eligibility Details)\s*:?/gi
+  const matches = [...details.matchAll(labelPattern)]
+  if (!matches.length) return []
+
+  return matches
+    .map((match, index) => {
+      const valueStart = (match.index || 0) + match[0].length
+      const valueEnd = index + 1 < matches.length ? matches[index + 1].index : details.length
+      return {
+        label: match[1].replace(/\s+/g, ' ').trim(),
+        value: details.slice(valueStart, valueEnd).replace(/^[\s:|\-]+|[\s:|\-]+$/g, '').replace(/\s+/g, ' ').trim(),
+      }
+    })
+    .filter((row) => row.value && row.value.length > 1)
+    .slice(0, 24)
+}
 export function ExamDetailPage() {
   const { id } = useParams()
   const { isAuthed } = useAuth()
@@ -63,6 +80,13 @@ export function ExamDetailPage() {
 
   const latestCycle = exam?.cycles?.[0] || exam?.latestCycle || null
   const deadlineDays = latestCycle?.applicationEnd ? daysUntil(latestCycle.applicationEnd) : null
+  const applicationStatus = useMemo(() => {
+    if (!latestCycle?.applyLink || !isOfficialUrl(latestCycle.applyLink)) return 'unavailable'
+    const now = new Date()
+    if (latestCycle.applicationStart && new Date(latestCycle.applicationStart) > now) return 'not_open'
+    if (latestCycle.applicationEnd && new Date(latestCycle.applicationEnd) < now) return 'closed'
+    return 'open'
+  }, [latestCycle])
 
   const eligibility = useMemo(() => {
     if (!exam) return null
@@ -89,6 +113,7 @@ export function ExamDetailPage() {
     [exam?.latestResultLink]
   )
   const cleanDetails = useMemo(() => sanitizeForDisplay(exam?.details || '', 4200), [exam?.details])
+  const detailRows = useMemo(() => parseNotificationDetails(cleanDetails), [cleanDetails])
 
   async function markApplied(status) {
     if (!isAuthed) return
@@ -206,7 +231,7 @@ export function ExamDetailPage() {
                 <CardHeader title="Actions" subtitle="Track this exam in your dashboard." />
                 <CardBody>
                   <div className="flex flex-col gap-2">
-                    {latestCycle?.applyLink && isOfficialUrl(latestCycle.applyLink) ? (
+                    {applicationStatus === 'open' ? (
                       <a href={latestCycle.applyLink} target="_blank" rel="noreferrer">
                         <Button className="w-full">
                           Official apply link <ExternalLink size={16} className="ml-2" />
@@ -214,7 +239,7 @@ export function ExamDetailPage() {
                       </a>
                     ) : (
                       <Button className="w-full" variant="ghost" disabled>
-                        Official apply link not available
+                        {applicationStatus === 'closed' ? 'Applications closed' : applicationStatus === 'not_open' ? 'Applications not open yet' : 'Official apply link not available'}
                       </Button>
                     )}
 
@@ -347,11 +372,26 @@ export function ExamDetailPage() {
                   subtitle="Clean summary from notification text."
                 />
                 <CardBody>
-                  <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                    <div className="max-h-90 overflow-auto whitespace-pre-line text-sm leading-7 text-gray-700">
-                      {cleanDetails}
+                  {detailRows.length ? (
+                    <div className="overflow-hidden rounded-2xl border border-slate-200">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-150 text-left text-sm">
+                          <tbody className="divide-y divide-slate-200">
+                            {detailRows.map((row, index) => (
+                              <tr key={`${row.label}-${index}`} className="align-top even:bg-slate-50/70">
+                                <th scope="row" className="w-48 px-4 py-3 font-semibold text-slate-900 sm:w-56">{row.label}</th>
+                                <td className="px-4 py-3 leading-6 text-slate-700">{row.value}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                      <div className="whitespace-pre-line text-sm leading-7 text-gray-700">{cleanDetails}</div>
+                    </div>
+                  )}
                 </CardBody>
               </Card>
             ) : null}
@@ -363,4 +403,6 @@ export function ExamDetailPage() {
 }
 
 export default ExamDetailPage
+
+
 

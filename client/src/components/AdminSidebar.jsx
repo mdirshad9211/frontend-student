@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, FileText, Users, CalendarClock } from 'lucide-react'
+import { LayoutDashboard, FileText, Users, CalendarClock, FileCheck2, IdCard } from 'lucide-react'
 
 const linkClass = ({ isActive }) =>
   `flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
@@ -21,6 +21,12 @@ export function AdminSidebar() {
           <NavLink className={linkClass} to="/admin/exam-cycles">
             <CalendarClock size={16} /> Exam Cycles
           </NavLink>
+          <NavLink className={linkClass} to="/admin/results">
+            <FileCheck2 size={16} /> Results
+          </NavLink>
+          <NavLink className={linkClass} to="/admin/admit-cards">
+            <IdCard size={16} /> Admit Cards
+          </NavLink>
           <NavLink className={linkClass} to="/admin/users">
             <Users size={16} /> Users
           </NavLink>
@@ -29,4 +35,6 @@ export function AdminSidebar() {
     </div>
   )
 }
+
+
 
