@@ -42,6 +42,14 @@ export function Footer() {
             </div>
           </div>
         </div>
+        <nav className="mt-8 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-slate-600">
+          <Link to="/about" className="hover:text-indigo-600">About us</Link>
+          <Link to="/contact" className="hover:text-indigo-600">Contact</Link>
+          <Link to="/careers" className="hover:text-indigo-600">Careers</Link>
+          <Link to="/privacy" className="hover:text-indigo-600">Privacy policy</Link>
+          <Link to="/terms" className="hover:text-indigo-600">Terms of use</Link>
+          <Link to="/disclaimer" className="hover:text-indigo-600">Disclaimer</Link>
+        </nav>
         <div className="mt-8 text-xs text-slate-500">
           � {new Date().getFullYear()} Sarkora. Not affiliated with any government body.
         </div>
@@ -49,6 +57,7 @@ export function Footer() {
     </footer>
   )
 }
+
 
 
 

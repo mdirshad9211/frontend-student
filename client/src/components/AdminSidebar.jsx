@@ -27,7 +27,12 @@ export function AdminSidebar() {
           <NavLink className={linkClass} to="/admin/admit-cards">
             <IdCard size={16} /> Admit Cards
           </NavLink>
-          <NavLink className={linkClass} to="/admin/users">
+          <NavLink className={linkClass} to="/admin/pages">
+            <FileText size={16} /> Site Pages
+          </NavLink>
+          <NavLink className={linkClass} to="/admin/jobs">
+            <FileText size={16} /> Career Jobs
+          </NavLink>          <NavLink className={linkClass} to="/admin/users">
             <Users size={16} /> Users
           </NavLink>
         </nav>
@@ -35,6 +40,7 @@ export function AdminSidebar() {
     </div>
   )
 }
+
 
 
 

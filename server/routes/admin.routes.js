@@ -13,6 +13,12 @@ const {
   adminListResults,
   adminListAdmitCards,
   adminRunSarkariScraper,
+  adminListPages,
+  adminSavePage,
+  adminListJobs,
+  adminCreateJob,
+  adminUpdateJob,
+  adminDeleteJob,
 } = require('../controllers/admin.controller');
 
 const router = express.Router();
@@ -28,6 +34,12 @@ router.get('/exam-cycles', adminListExamCycles);
 router.post('/exam-cycle', validateBody(examCycleSchema), adminCreateExamCycle);
 
 router.get('/users', adminListUsers);
+router.get('/pages', adminListPages);
+router.put('/pages/:slug', adminSavePage);
+router.get('/jobs', adminListJobs);
+router.post('/jobs', adminCreateJob);
+router.put('/jobs/:id', adminUpdateJob);
+router.delete('/jobs/:id', adminDeleteJob);
 router.get('/results', adminListResults);
 router.get('/admit-cards', adminListAdmitCards);
 
@@ -35,6 +47,8 @@ router.get('/admit-cards', adminListAdmitCards);
 router.post('/scrape/sarkariresult', adminRunSarkariScraper);
 
 module.exports = router;
+
+
 
 
 

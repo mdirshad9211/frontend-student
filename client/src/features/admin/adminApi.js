@@ -46,3 +46,11 @@ export async function adminListUpdates(type) {
   return data
 }
 
+
+export async function adminListPages() { const { data } = await api.get('/admin/pages'); return data }
+export async function adminSavePage(slug, payload) { const { data } = await api.put('/admin/pages/' + slug, payload); return data }
+export async function adminListJobs() { const { data } = await api.get('/admin/jobs'); return data }
+export async function adminCreateJob(payload) { const { data } = await api.post('/admin/jobs', payload); return data }
+export async function adminUpdateJob(id, payload) { const { data } = await api.put('/admin/jobs/' + id, payload); return data }
+export async function adminDeleteJob(id) { const { data } = await api.delete('/admin/jobs/' + id); return data }
+

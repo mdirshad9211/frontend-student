@@ -12,6 +12,7 @@ const userRoutes = require('./routes/user.routes');
 const examsRoutes = require('./routes/exams.routes');
 const userExamsRoutes = require('./routes/userExams.routes');
 const adminRoutes = require('./routes/admin.routes');
+const siteRoutes = require('./routes/site.routes');
 const updatesRoutes = require('./routes/updates.routes');
 
 function createApp() {
@@ -47,6 +48,7 @@ function createApp() {
   app.use('/api', updatesRoutes);
   app.use('/api/user-exams', userExamsRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api', siteRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
@@ -55,5 +57,6 @@ function createApp() {
 }
 
 module.exports = { createApp };
+
 
 

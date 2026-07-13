@@ -26,6 +26,9 @@ import { AdminExamManager } from './pages/admin/AdminExamManager'
 import { AdminExamCycleManager } from './pages/admin/AdminExamCycleManager'
 import { AdminUserManager } from './pages/admin/AdminUserManager'
 import { AdminUpdates } from './pages/admin/AdminUpdates'
+import { AdminContent } from './pages/admin/AdminContent'
+import { AdminJobs } from './pages/admin/AdminJobs'
+import { InfoPage, CareersPage, CareerDetailPage } from './pages/InfoPages'
 
 function PageTransition({ children }) {
   const location = useLocation()
@@ -51,6 +54,7 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <BrowserRouter>
+          <Seo />
           <Toaster
             position="top-right"
             toastOptions={{
@@ -73,7 +77,7 @@ export default function App() {
                 <Route path="/results/:id" element={<UpdateDetailPage type="result" />} />
                 <Route path="/admit-cards" element={<UpdateListPage type="admit_card" />} />
                 <Route path="/admit-cards/:id" element={<UpdateDetailPage type="admit_card" />} />
-                <Route path="/exams/:id" element={<ExamDetailPage />} />
+                <Route path="/exams/:id" element={<ExamDetailPage />} />`r`n                <Route path="/about" element={<InfoPage slug="about" />} />`r`n                <Route path="/contact" element={<InfoPage slug="contact" />} />`r`n                <Route path="/privacy" element={<InfoPage slug="privacy" />} />`r`n                <Route path="/disclaimer" element={<InfoPage slug="disclaimer" />} />`r`n                <Route path="/terms" element={<InfoPage slug="terms" />} />`r`n                <Route path="/careers" element={<CareersPage />} />`r`n                <Route path="/careers/:id" element={<CareerDetailPage />} />
               </Route>
 
               <Route
@@ -103,7 +107,7 @@ export default function App() {
                 <Route path="/admin/exam-cycles" element={<AdminExamCycleManager />} />
                 <Route path="/admin/users" element={<AdminUserManager />} />
                 <Route path="/admin/results" element={<AdminUpdates type="result" />} />
-                <Route path="/admin/admit-cards" element={<AdminUpdates type="admit_card" />} />
+                <Route path="/admin/admit-cards" element={<AdminUpdates type="admit_card" />} />`r`n                <Route path="/admin/pages" element={<AdminContent />} />`r`n                <Route path="/admin/jobs" element={<AdminJobs />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -114,6 +118,9 @@ export default function App() {
     </ErrorBoundary>
   )
 }
+
+
+
 
 
 
