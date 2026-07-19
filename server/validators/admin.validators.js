@@ -21,5 +21,22 @@ const examCycleSchema = z.object({
   notificationPdf: z.string().url().optional().nullable(),
 });
 
-module.exports = { examSchema, examCycleSchema };
+const pageSchema = z.object({
+  title: z.string().min(1).max(120),
+  content: z.string().min(1).max(20000),
+}).strict();
+
+const jobSchema = z.object({
+  title: z.string().min(2).max(160),
+  location: z.string().max(120).optional(),
+  employmentType: z.string().max(80).optional(),
+  summary: z.string().max(1000).optional(),
+  description: z.string().max(10000).optional(),
+  applicationUrl: z.string().url().max(2048).optional().or(z.literal('')),
+  isPublished: z.boolean().optional(),
+}).strict();
+
+const scraperSchema = z.object({ limit: z.number().int().min(1).max(150).optional() }).strict();
+
+module.exports = { examSchema, examCycleSchema, pageSchema, jobSchema, scraperSchema };
 

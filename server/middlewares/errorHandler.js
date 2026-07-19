@@ -6,10 +6,14 @@ function notFound(req, res) {
 
 function errorHandler(err, req, res, next) {
   const isApiError = err instanceof ApiError;
-  const statusCode = isApiError ? err.statusCode : 500;
+  const isMalformedJson = err instanceof SyntaxError && err.status === 400 && 'body' in err;
+  const isMongooseValidation = err.name === 'ValidationError';
+  const isMongooseCast = err.name === 'CastError';
+  const isDuplicateKey = err && err.code === 11000;
+  const statusCode = isApiError ? err.statusCode : (isMalformedJson || isMongooseValidation || isMongooseCast ? 400 : (isDuplicateKey ? 409 : 500));
 
   const response = {
-    message: isApiError ? err.message : 'Internal Server Error',
+    message: isApiError ? err.message : (isMalformedJson ? 'Invalid JSON request body' : (isMongooseValidation || isMongooseCast ? 'Invalid request data' : (isDuplicateKey ? 'A record with this value already exists' : 'Internal Server Error'))),
   };
 
   if (process.env.NODE_ENV !== 'production') {
@@ -22,4 +26,3 @@ function errorHandler(err, req, res, next) {
 }
 
 module.exports = { notFound, errorHandler };
-
