@@ -23,6 +23,15 @@ const pageMetadata = {
     title: 'Government Exam Admit Cards | Sarkora',
     description: 'Find government exam admit card updates, download links and important examination details.',
   },
+  '/careers': {
+    title: 'Careers | Sarkora',
+    description: 'Explore career opportunities with Sarkora.',
+  },
+  '/about': { title: 'About Sarkora', description: 'Learn about Sarkora and our government-exam information service.' },
+  '/contact': { title: 'Contact Sarkora', description: 'Contact the Sarkora team for feedback and support.' },
+  '/privacy': { title: 'Privacy Policy | Sarkora', description: 'Read the Sarkora privacy policy.' },
+  '/disclaimer': { title: 'Disclaimer | Sarkora', description: 'Read the Sarkora information disclaimer.' },
+  '/terms': { title: 'Terms of Use | Sarkora', description: 'Read the Sarkora terms of use.' },
 }
 
 function getMetadata(pathname) {
@@ -39,7 +48,7 @@ export function Seo() {
   const { pathname } = useLocation()
   const metadata = getMetadata(pathname)
   const canonicalUrl = siteUrl ? siteUrl + pathname : undefined
-  const isPublicPage = Boolean(pageMetadata[pathname]) || pathname.startsWith('/exams/')
+  const isPublicPage = Boolean(pageMetadata[pathname]) || ['/exams/', '/results/', '/admit-cards/', '/careers/'].some((prefix) => pathname.startsWith(prefix))
 
   useEffect(() => {
     if (!gaMeasurementId) return
