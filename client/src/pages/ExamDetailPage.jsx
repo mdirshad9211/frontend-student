@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader } from '../components/Card'
 import { Badge } from '../components/Badge'
 import { Button } from '../components/Button'
 import { Skeleton } from '../components/Skeleton'
+import { AdSlot } from '../components/AdSlot'
 import { getExam } from '../features/exams/examsApi'
 import { getProfile } from '../features/profile/profileApi'
 import { upsertUserExam } from '../features/userExams/userExamsApi'
@@ -395,6 +396,8 @@ export function ExamDetailPage() {
                 </CardBody>
               </Card>
             ) : null}
+
+            <AdSlot />
           </div>
         )}
       </Container>

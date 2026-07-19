@@ -5,6 +5,7 @@ import { Container } from '../components/Container'
 import { Card, CardBody, CardHeader } from '../components/Card'
 import { Button } from '../components/Button'
 import { Skeleton } from '../components/Skeleton'
+import { AdSlot } from '../components/AdSlot'
 import { api } from '../services/api'
 import { formatDate } from '../utils/date'
 import { sanitizeForDisplay } from '../utils/sanitizeDisplay'
@@ -53,5 +54,6 @@ export function UpdateDetailPage({ type }) {
       {item.details ? <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4"><h2 className="text-sm font-bold text-slate-900">Update details</h2><div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">{sanitizeForDisplay(item.details, 4200)}</div></div> : null}
       <div className="mt-5 flex flex-wrap gap-3">{exam?._id ? <Link to={'/exams/' + exam._id}><Button variant="ghost">View exam details</Button></Link> : null}{item.officialLink && isOfficialUrl(item.officialLink) ? <a href={item.officialLink} target="_blank" rel="noreferrer"><Button>{action} <ExternalLink size={16} className="ml-2" /></Button></a> : null}</div>
     </CardBody></Card>
+    <AdSlot />
   </div></Container></div>
 }
